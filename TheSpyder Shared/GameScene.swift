@@ -18,6 +18,32 @@ class GameScene: SKScene {
     var playerLanes = Array<CGPoint>()
     var playerLane = 0
     var playerRotation: CGFloat = 0
+
+    enum GameObjectType {
+        case entity
+        case background
+    }
+  
+    /// Get the appropriate scale factor relative to the specified object type.
+    /// Intended to make scale calculations a bit more readable!
+    func scaleFactor(of type: GameObjectType) -> CGFloat {
+        switch type {
+        case .entity:
+            return globalScale * entityScale
+        case .background:
+            return globalScale
+        }
+    }
+  
+    /// Applies scale to given object pertaining to type.
+    func applyScale(to object: SKSpriteNode, of type: GameObjectType) {
+        switch type {
+        case .entity:
+            object.setScale(globalScale * entityScale)
+        case .background:
+            object.setScale(globalScale)
+        }
+    }
     
     override func didMove(to view: SKView) {
         // Get scale needed to make background fill screen; we will scale everything by this
@@ -36,7 +62,7 @@ class GameScene: SKScene {
         // Setup sprites
         
         backgroundA = SKSpriteNode(texture: tBackground)
-        backgroundA.setScale(globalScale)
+        applyScale(to: backgroundA, of: .background)
         backgroundA.position = CGPoint(
             x: view.frame.width / 2,
             y: view.frame.height / 2
@@ -48,10 +74,10 @@ class GameScene: SKScene {
         addChild(backgroundB)
         
         player = SKSpriteNode(texture: tPlayer)
-        player.setScale(globalScale * entityScale)
+        applyScale(to: player, of: .entity)
         player.position = CGPoint(
             x: view.frame.width / 2,
-            y: (player.frame.height / 2) + (30 * globalScale * entityScale) //  Place the player an arbitrary value above the bottom of the screen, multiplied by the global scale
+            y: (player.frame.height / 2) + (30 * scaleFactor(of: .entity)) //  Place the player an arbitrary value above the bottom of the screen, multiplied by the global scale
         )
         
         addChild(player)
@@ -68,16 +94,16 @@ class GameScene: SKScene {
         
         // Calculate player lanes
         
-        let offshoot = (backgroundA.frame.width - view.frame.width) * 0.5
-        let lanePad = 18.0
-        let laneWidth = 22.0
-        let laneCount = 3
+        let offshoot = (backgroundA.frame.width - view.frame.width) * 0.5   // Amt. of the background image that's outside the view
+        let lanePad = 18.0      // Space between start of background image and first lane
+        let laneWidth = 22.0    // Width of one lane
+        let laneCount = 3       // Amt. of lanes
 
         for i in stride(from: 0, to: laneCount, by: 1) {
             let t = CGFloat(i)
             playerLanes.append(
                 CGPoint(
-                    x: (lanePad + (t * laneWidth) + (laneWidth / 2 - t)) * globalScale - offshoot,
+                    x: (lanePad + (t * laneWidth) + (laneWidth / 2 - t)) * scaleFactor(of: .background) - offshoot,
                     y: player.position.y
                 )
             )
@@ -107,7 +133,7 @@ class GameScene: SKScene {
             break
         }
     }
-    
+   
     func scrollBackground(){
         let dy = CGFloat(scrollingSpeed) * deltaTime
                 
