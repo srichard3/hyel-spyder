@@ -16,8 +16,21 @@
 			membershipExceptions = (
 				Actions.sks,
 				Assets.xcassets,
+				font.ttf,
 				GameScene.sks,
 				GameScene.swift,
+				Sounds/attack.wav,
+				Sounds/crash.wav,
+				Sounds/hide.wav,
+				Sounds/peek.wav,
+				Sounds/switch.wav,
+			);
+			target = 053C70622CCE68FE0093D173 /* TheSpyder iOS */;
+		};
+		05E318062CD00E5A005BB3D5 /* Exceptions for "TheSpyder iOS" folder in "TheSpyder iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"TheSpyder-iOS-Info.plist",
 			);
 			target = 053C70622CCE68FE0093D173 /* TheSpyder iOS */;
 		};
@@ -34,6 +47,9 @@
 		};
 		053C70652CCE68FE0093D173 /* TheSpyder iOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				05E318062CD00E5A005BB3D5 /* Exceptions for "TheSpyder iOS" folder in "TheSpyder iOS" target */,
+			);
 			path = "TheSpyder iOS";
 			sourceTree = "<group>";
 		};
@@ -156,10 +172,12 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = R87PB9Z683;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "TheSpyder-iOS-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDarkContent;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -187,10 +205,12 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = R87PB9Z683;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "TheSpyder-iOS-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDarkContent;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;

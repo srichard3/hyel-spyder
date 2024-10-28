@@ -1,6 +1,19 @@
 import SpriteKit
 import GameplayKit
 
+/// Allows us to handle entities more easily
+class Entity {
+    // MARK: Finish this!
+
+    var sprite: SKSpriteNode!
+    var shadow: SKSpriteNode!
+   
+    init(target: SKScene, sprite: SKSpriteNode, shadow: SKSpriteNode){
+        self.sprite = sprite
+        self.shadow = shadow
+    }
+}
+
 class GameScene: SKScene, SKPhysicsContactDelegate {
     var lastUpdateTime: TimeInterval = 0
     var deltaTime: CGFloat = 0
@@ -10,34 +23,39 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var backgroundA: SKSpriteNode!
     var backgroundB: SKSpriteNode!
-    var player: SKSpriteNode!
    
     var globalScale: CGFloat = 1
     var entityScale: CGFloat = 0.8
     var scrollingSpeed: CGFloat = 500
-    
+ 
+    enum GameObjectType {
+        case entity
+        case background
+    }
+
+    var player: SKSpriteNode!
     var playerLanes = Array<CGPoint>()
     var playerLane = 0
     var playerRotation: CGFloat = 0
-
+    let playerCategory: UInt32 = 0x1 << 0
+    
+    var carSpawnTimer: Timer!
+    var carSpawnInterval: TimeInterval = 0.75
+    let carCategory: UInt32 = 0x1 << 1
+    var carsInTheScene = Array<SKSpriteNode>()
     var possibleCars: [SKTexture] = [
         SKTexture(imageNamed: "car_g"),
         SKTexture(imageNamed: "car_o"),
         SKTexture(imageNamed: "car_r"),
         SKTexture(imageNamed: "car_y")
     ]
-   
-    var gameTimer: Timer!
-    
-    let playerCategory: UInt32 = 0x1 << 0
-    let carCategory: UInt32 = 0x1 << 1
-    var carsInTheScene = Array<SKSpriteNode>()
-    var carSpawnInterval: TimeInterval = 0.75
-    
-    enum GameObjectType {
-        case entity
-        case background
-    }
+
+    var scoreLabel: SKLabelNode!
+    var scoreTimer: Timer!
+    var scoreAddInterval: TimeInterval = 1
+    var scoreMultiplier: Int = 1
+    var baseScore: Int = 5
+    var currentScore: Int = 0
   
     /// Get the appropriate scale factor relative to the specified object type.
     /// Intended to make scale calculations a bit more readable!
@@ -57,6 +75,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             object.setScale(globalScale * entityScale)
         case .background:
             object.setScale(globalScale)
+        }
+    }
+
+    func printAvailableFonts(){
+        for family in UIFont.familyNames {
+            print("Font Family: \(family)")
+            for name in UIFont.fontNames(forFamilyName: family) {
+                print("- Font Name: \(name)")
+            }
         }
     }
     
@@ -81,19 +108,25 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Setup sprites
         
         backgroundA = SKSpriteNode(texture: tBackground)
+
         applyScale(to: backgroundA, of: .background)
+        backgroundA.zPosition = -1
         backgroundA.position = CGPoint(
             x: view.frame.width / 2,
             y: view.frame.height / 2
         )
+
         addChild(backgroundA)
         
         backgroundB = backgroundA.copy() as? SKSpriteNode
         backgroundB.position.y = backgroundA.position.y + backgroundA.size.height
+
         addChild(backgroundB)
         
         player = SKSpriteNode(texture: tPlayer)
+
         applyScale(to: player, of: .entity)
+        player.zPosition = 1
         player.position = CGPoint(
             x: view.frame.width / 2,
             y: (player.frame.height / 2) + (30 * scaleFactor(of: .entity)) //  Place the player an arbitrary value above the bottom of the screen, multiplied by the global scale
@@ -137,16 +170,32 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Move player to center lane
         playerLane = Int(playerLanes.count / 2)
         
-        // Schedule the game timer to spawn new cars at the set interval
-        gameTimer = Timer.scheduledTimer(timeInterval: carSpawnInterval, target: self, selector: #selector(spawnCar), userInfo: nil, repeats: true)
+        // Schedule game timers
+        carSpawnTimer = Timer.scheduledTimer(timeInterval: carSpawnInterval, target: self, selector: #selector(spawnCar), userInfo: nil, repeats: true)
+        scoreTimer = Timer.scheduledTimer(timeInterval: scoreAddInterval, target: self, selector: #selector(addScore), userInfo: nil, repeats: true)
     
         // Bind the physics world to this scene
         self.physicsWorld.contactDelegate = self
         
         // We will use our own speed calculations so don't use gravity
         self.physicsWorld.gravity = CGVector(dx: 0, dy: 0)
+            
+        // Setup score label
+        scoreLabel = SKLabelNode(text: "\(currentScore)")
+
+        scoreLabel.fontName = "FFF Forward" // Use the name of the font, not the file name
+        scoreLabel.fontSize = 32
+        scoreLabel.position = CGPoint(x: frame.midX, y: frame.midY + frame.midY / 2)
+        scoreLabel.zPosition = 2
+
+        addChild(scoreLabel)
     }
-   
+  
+    @objc func addScore(){
+        currentScore += Int(baseScore * scoreMultiplier)
+        scoreLabel.text = "\(currentScore)"
+    }
+    
     @objc func handleSwipe(_ gesture: UISwipeGestureRecognizer){
         switch (gesture.direction){
         case .left:
@@ -209,8 +258,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // Set up the car
         applyScale(to: chosenCar, of: .entity)
-        chosenCar.position.x = chosenLane.x
-        chosenCar.position.y = self.frame.height + chosenCar.frame.height + (10 * scaleFactor(of: .background))
+        chosenCar.zPosition = 0
+        chosenCar.position = CGPoint(
+            x: chosenLane.x,
+            y: self.frame.height + chosenCar.frame.height + (10 * scaleFactor(of: .background))
+        )
         chosenCar.physicsBody = SKPhysicsBody(rectangleOf: chosenCar.size)
         chosenCar.physicsBody?.isDynamic = true
         chosenCar.physicsBody?.categoryBitMask = carCategory // Is a car
