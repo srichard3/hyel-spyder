@@ -1,10 +1,3 @@
-//
-//  GameViewController.swift
-//  TheSpyder iOS
-//
-//  Created by Rafael Niebles on 10/27/24.
-//
-
 import UIKit
 import SpriteKit
 import GameplayKit
