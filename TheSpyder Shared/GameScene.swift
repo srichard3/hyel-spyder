@@ -1,6 +1,7 @@
 import SpriteKit
+import GameplayKit
 
-class GameScene: SKScene {
+class GameScene: SKScene, SKPhysicsContactDelegate {
     var lastUpdateTime: TimeInterval = 0
     var deltaTime: CGFloat = 0
     
@@ -13,12 +14,26 @@ class GameScene: SKScene {
    
     var globalScale: CGFloat = 1
     var entityScale: CGFloat = 0.8
-    var scrollingSpeed: CGFloat = 250
+    var scrollingSpeed: CGFloat = 500
     
     var playerLanes = Array<CGPoint>()
     var playerLane = 0
     var playerRotation: CGFloat = 0
 
+    var possibleCars: [SKTexture] = [
+        SKTexture(imageNamed: "car_g"),
+        SKTexture(imageNamed: "car_o"),
+        SKTexture(imageNamed: "car_r"),
+        SKTexture(imageNamed: "car_y")
+    ]
+   
+    var gameTimer: Timer!
+    
+    let playerCategory: UInt32 = 0x1 << 0
+    let carCategory: UInt32 = 0x1 << 1
+    var carsInTheScene = Array<SKSpriteNode>()
+    var carSpawnInterval: TimeInterval = 0.75
+    
     enum GameObjectType {
         case entity
         case background
@@ -58,6 +73,10 @@ class GameScene: SKScene {
         
         tBackground.filteringMode = .nearest
         tPlayer.filteringMode = .nearest
+       
+        for carTexture in possibleCars {
+            carTexture.filteringMode = .nearest
+        }
         
         // Setup sprites
         
@@ -117,6 +136,15 @@ class GameScene: SKScene {
         
         // Move player to center lane
         playerLane = Int(playerLanes.count / 2)
+        
+        // Schedule the game timer to spawn new cars at the set interval
+        gameTimer = Timer.scheduledTimer(timeInterval: carSpawnInterval, target: self, selector: #selector(spawnCar), userInfo: nil, repeats: true)
+    
+        // Bind the physics world to this scene
+        self.physicsWorld.contactDelegate = self
+        
+        // We will use our own speed calculations so don't use gravity
+        self.physicsWorld.gravity = CGVector(dx: 0, dy: 0)
     }
    
     @objc func handleSwipe(_ gesture: UISwipeGestureRecognizer){
@@ -173,6 +201,40 @@ class GameScene: SKScene {
             t: smoothTime * deltaTime
         )
     }
+   
+    @objc func spawnCar(){
+        // Pick a random lane and car
+        let chosenLane: CGPoint = playerLanes[Int.random(in: 0..<playerLanes.count)]
+        let chosenCar: SKSpriteNode = SKSpriteNode(texture: possibleCars[Int.random(in: 0..<possibleCars.count)])
+
+        // Set up the car
+        applyScale(to: chosenCar, of: .entity)
+        chosenCar.position.x = chosenLane.x
+        chosenCar.position.y = self.frame.height + chosenCar.frame.height + (10 * scaleFactor(of: .background))
+        chosenCar.physicsBody = SKPhysicsBody(rectangleOf: chosenCar.size)
+        chosenCar.physicsBody?.isDynamic = true
+        chosenCar.physicsBody?.categoryBitMask = carCategory // Is a car
+        chosenCar.physicsBody?.contactTestBitMask = playerCategory // That checks for contact with player
+        chosenCar.physicsBody?.collisionBitMask = 0 // But doesn't physically respond to that collision
+       
+        // Add it to both the scene and our tracker array
+        self.addChild(chosenCar)
+        carsInTheScene.append(chosenCar)
+    }
+
+    func updateCars(){
+        for car in carsInTheScene {
+            // Remove offscreen cars from the scene
+            if car.position.y <= -car.frame.height / 2 {
+                car.removeFromParent()
+                continue
+            }
+            
+            // Any cars on screen should instantly respond to game speed changes, not just newly spawned ones
+            let dy: CGFloat = (scrollingSpeed - 25 * scaleFactor(of: .background)) * deltaTime
+            car.position.y -= dy
+        }
+    }
     
     override func update(_ currentTime: TimeInterval) {
         // Avoid very large initial deltaTime
@@ -184,6 +246,7 @@ class GameScene: SKScene {
         
         scrollBackground()
         movePlayer()
+        updateCars()
         
         lastUpdateTime = currentTime
     }
