@@ -12,10 +12,12 @@ class GameScene: SKScene {
     var player: SKSpriteNode!
    
     var globalScale: CGFloat = 1
+    var entityScale: CGFloat = 0.8
     var scrollingSpeed: CGFloat = 250
-   
+    
     var playerLanes = Array<CGPoint>()
     var playerLane = 0
+    var playerRotation: CGFloat = 0
     
     override func didMove(to view: SKView) {
         // Get scale needed to make background fill screen; we will scale everything by this
@@ -46,10 +48,10 @@ class GameScene: SKScene {
         addChild(backgroundB)
         
         player = SKSpriteNode(texture: tPlayer)
-        player.setScale(globalScale)
+        player.setScale(globalScale * entityScale)
         player.position = CGPoint(
             x: view.frame.width / 2,
-            y: 0 + player.frame.height + 100
+            y: (player.frame.height / 2) + (30 * globalScale * entityScale) //  Place the player an arbitrary value above the bottom of the screen, multiplied by the global scale
         )
         
         addChild(player)
@@ -65,18 +67,30 @@ class GameScene: SKScene {
         view.addGestureRecognizer(swipeRight)
         
         // Calculate player lanes
-        // TODO: Fix! The positioning is incorrect
-        for i in stride(from: 1, through: 3, by: 1){
+        
+        let offshoot = (backgroundA.frame.width - view.frame.width) * 0.5
+        let lanePad = 18.0
+        let laneWidth = 22.0
+        let laneCount = 3
+
+        for i in stride(from: 0, to: laneCount, by: 1) {
+            let t = CGFloat(i)
             playerLanes.append(
                 CGPoint(
-                    x: (view.frame.width / 3.0) * CGFloat(i),
+                    x: (lanePad + (t * laneWidth) + (laneWidth / 2 - t)) * globalScale - offshoot,
                     y: player.position.y
                 )
             )
+            
+            // Example lane calculations:
+            // lane 0 = 18 + 11
+            // lane 1 = 18 + 22 + 10
+            // lane 3 = 18 + 22 + 22 + 9
+            // ...
         }
         
         // Move player to center lane
-        playerLane = 1
+        playerLane = Int(playerLanes.count / 2)
     }
    
     @objc func handleSwipe(_ gesture: UISwipeGestureRecognizer){
@@ -124,6 +138,14 @@ class GameScene: SKScene {
         
         // Not necessary:
         // player.position.y = lerp(start: player.position.y, end: playerLanes[playerLane].y, t: smoothTime * deltaTime)
+      
+        // Take a small fraction of the inverted remaining distance to the target lane to rotate the player a bit
+        let xTargetLaneDistance = playerLanes[playerLane].x - player.position.x
+        player.zRotation = lerp(
+            start: player.zRotation,
+            end: -xTargetLaneDistance * 0.0125,
+            t: smoothTime * deltaTime
+        )
     }
     
     override func update(_ currentTime: TimeInterval) {
