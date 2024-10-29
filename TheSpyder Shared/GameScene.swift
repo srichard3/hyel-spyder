@@ -1,6 +1,10 @@
 import SpriteKit
 import GameplayKit
 
+// TODO: Needed fixes
+// - [ ] Upon exiting and leaving app, bg. disappears, player goes crazy (very likely related to deltaTime calculation!)
+// - [ ] When the game is going really fast, you can see the background briefly change position (add a third background  maybe?)
+
 /// Links a shadow to its caster
 class ShadowInfo{
     var shadow: SKSpriteNode!
@@ -13,6 +17,11 @@ class ShadowInfo{
 }
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
+    enum GameObjectType {
+        case entity
+        case background
+    }
+
     var lastUpdateTime: TimeInterval = 0
     var deltaTime: CGFloat = 0
     
@@ -25,12 +34,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
    
     var globalScale: CGFloat = 1
     var entityScale: CGFloat = 0.8
-    var scrollingSpeed: CGFloat = 500
- 
-    enum GameObjectType {
-        case entity
-        case background
-    }
 
     var player: SKSpriteNode!
     var playerLanes = Array<CGPoint>()
@@ -52,12 +55,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var sceneShadowInfo = Array<ShadowInfo>()
     
     var scoreLabel: SKLabelNode!
+
     var scoreTimer: Timer!
     var scoreAddInterval: TimeInterval = 1
-    var scoreMultiplier: Int = 1
+
+    var scoreMultiplier: CGFloat = 1.0
+    var scoreMultiplierIncrease: CGFloat = 0.25
+
     var baseScore: Int = 5
     var currentScore: Int = 0
-  
+    
+    var gameSpeed: CGFloat = 600
+    var speedupAmount: CGFloat = 120
+    var scoreUntilSpeedup: Int = 50
+    var scoreUntilSpeedupIncrease: Int = 100
+
     /// Get the appropriate scale factor relative to the specified object type.
     /// Intended to make scale calculations a bit more readable!
     func scaleFactor(of type: GameObjectType) -> CGFloat {
@@ -189,7 +201,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // We will use our own speed calculations so don't use gravity
         self.physicsWorld.gravity = CGVector(dx: 0, dy: 0)
-            
+           
         // Setup score label
         scoreLabel = SKLabelNode(text: "\(currentScore)")
 
@@ -200,9 +212,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         addChild(scoreLabel)
     }
-  
+ 
+    func handleGameSpeed(){
+        // If we surpass the current speedup threshold, increase game speed, score multiplier, and raise the threshold!
+        if currentScore >= scoreUntilSpeedup {
+            gameSpeed += speedupAmount
+            scoreUntilSpeedup += scoreUntilSpeedupIncrease
+            scoreMultiplier += scoreMultiplierIncrease
+        }
+    }
+
     @objc func addScore(){
-        currentScore += Int(baseScore * scoreMultiplier)
+        currentScore += Int(CGFloat(baseScore) * scoreMultiplier)
         scoreLabel.text = "\(currentScore)"
     }
     
@@ -222,7 +243,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
    
     func scrollBackground(){
-        let dy = CGFloat(scrollingSpeed) * deltaTime
+        let dy = gameSpeed * deltaTime
                 
         // Move to bottom until off-screen, move to top and restart
         backgroundA.position.y -= dy
@@ -241,7 +262,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func lerp(start: CGFloat, end: CGFloat, t: CGFloat) -> CGFloat{
         return (1 - t) * start + t * end
     }
-   
+    
     /// Smoothly moves the player between the calculated lanes
     func movePlayer(){
         let smoothTime = 7.5
@@ -310,7 +331,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
            
             else {
                 // Any cars on screen should instantly respond to game speed changes, not just newly spawned ones
-                let dy: CGFloat = (scrollingSpeed - 25 * scaleFactor(of: .background)) * deltaTime
+                let dy: CGFloat = (gameSpeed - 25 * scaleFactor(of: .background)) * deltaTime
                 car.position.y -= dy
                
                 // Move up!
@@ -353,6 +374,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         movePlayer()
         updateCars()
         updateShadows()
+        handleGameSpeed()
 
         lastUpdateTime = currentTime
     }
