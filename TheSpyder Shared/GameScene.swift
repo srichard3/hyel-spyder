@@ -1,16 +1,14 @@
 import SpriteKit
 import GameplayKit
 
-/// Allows us to handle entities more easily
-class Entity {
-    // MARK: Finish this!
-
-    var sprite: SKSpriteNode!
+/// Links a shadow to its caster
+class ShadowInfo{
     var shadow: SKSpriteNode!
-   
-    init(target: SKScene, sprite: SKSpriteNode, shadow: SKSpriteNode){
-        self.sprite = sprite
+    var caster: SKSpriteNode!
+    
+    init(shadow: SKSpriteNode, caster: SKSpriteNode){
         self.shadow = shadow
+        self.caster = caster
     }
 }
 
@@ -20,6 +18,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     let tBackground = SKTexture(imageNamed: "road")
     let tPlayer = SKTexture(imageNamed: "player")
+    let tShadow = SKTexture(imageNamed: "shadow")
     
     var backgroundA: SKSpriteNode!
     var backgroundB: SKSpriteNode!
@@ -50,6 +49,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         SKTexture(imageNamed: "car_y")
     ]
 
+    var sceneShadowInfo = Array<ShadowInfo>()
+    
     var scoreLabel: SKLabelNode!
     var scoreTimer: Timer!
     var scoreAddInterval: TimeInterval = 1
@@ -78,35 +79,31 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
 
-    func printAvailableFonts(){
-        for family in UIFont.familyNames {
-            print("Font Family: \(family)")
-            for name in UIFont.fontNames(forFamilyName: family) {
-                print("- Font Name: \(name)")
-            }
-        }
-    }
-    
     override func didMove(to view: SKView) {
-        // Get scale needed to make background fill screen; we will scale everything by this
-        // TODO: Edit asset so that backgrounds + entities have same PPI
-        
+        // Get scale needed to make background fill screen; resizing will be based off this scale factor
         let xScaleFactor = view.frame.width / tBackground.size().width
         let yScaleFactor = view.frame.height / tBackground.size().height
         
         globalScale = max(xScaleFactor, yScaleFactor)
         
         // Setup textures
-        
         tBackground.filteringMode = .nearest
         tPlayer.filteringMode = .nearest
+        tShadow.filteringMode = .nearest
        
         for carTexture in possibleCars {
             carTexture.filteringMode = .nearest
         }
-        
+    
         // Setup sprites
+        // Layers:
+        // -1 -> BG
+        //  0 -> Shadows
+        //  1 -> Cars
+        //  2 -> Player
+        //  3 -> GUI
         
+        // Setup background A
         backgroundA = SKSpriteNode(texture: tBackground)
 
         applyScale(to: backgroundA, of: .background)
@@ -117,25 +114,39 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         )
 
         addChild(backgroundA)
-        
+
+        // Setup background B
         backgroundB = backgroundA.copy() as? SKSpriteNode
         backgroundB.position.y = backgroundA.position.y + backgroundA.size.height
 
         addChild(backgroundB)
-        
+       
+        // Setup player
         player = SKSpriteNode(texture: tPlayer)
 
         applyScale(to: player, of: .entity)
-        player.zPosition = 1
+        player.zPosition = 2
         player.position = CGPoint(
             x: view.frame.width / 2,
             y: (player.frame.height / 2) + (30 * scaleFactor(of: .entity)) //  Place the player an arbitrary value above the bottom of the screen, multiplied by the global scale
         )
         
         addChild(player)
+    
+        // Give player a shadow
+        let playerShadow = SKSpriteNode(texture: tShadow)
         
+        applyScale(to: playerShadow, of: .entity)
+        playerShadow.alpha = 0.3
+        playerShadow.zPosition = 0
+
+        let playerShadowInfo = ShadowInfo(shadow: playerShadow, caster: player)
+
+        addChild(playerShadow)
+        
+        sceneShadowInfo.append(playerShadowInfo)
+
         // Create swipe recognizers for left and right and add them to this scene
-        
         let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:))) // The _: effectively makes it so the recognizer passes itself into HandleSwipe
         swipeLeft.direction = .left
         view.addGestureRecognizer(swipeLeft)
@@ -145,7 +156,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         view.addGestureRecognizer(swipeRight)
         
         // Calculate player lanes
-        
         let offshoot = (backgroundA.frame.width - view.frame.width) * 0.5   // Amt. of the background image that's outside the view
         let lanePad = 18.0      // Space between start of background image and first lane
         let laneWidth = 22.0    // Width of one lane
@@ -186,7 +196,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scoreLabel.fontName = "FFF Forward" // Use the name of the font, not the file name
         scoreLabel.fontSize = 32
         scoreLabel.position = CGPoint(x: frame.midX, y: frame.midY + frame.midY / 2)
-        scoreLabel.zPosition = 2
+        scoreLabel.zPosition = 3
 
         addChild(scoreLabel)
     }
@@ -215,7 +225,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let dy = CGFloat(scrollingSpeed) * deltaTime
                 
         // Move to bottom until off-screen, move to top and restart
-
         backgroundA.position.y -= dy
         backgroundB.position.y -= dy
        
@@ -250,7 +259,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             t: smoothTime * deltaTime
         )
     }
-   
+  
     @objc func spawnCar(){
         // Pick a random lane and car
         let chosenLane: CGPoint = playerLanes[Int.random(in: 0..<playerLanes.count)]
@@ -258,7 +267,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // Set up the car
         applyScale(to: chosenCar, of: .entity)
-        chosenCar.zPosition = 0
+        chosenCar.zPosition = 1
         chosenCar.position = CGPoint(
             x: chosenLane.x,
             y: self.frame.height + chosenCar.frame.height + (10 * scaleFactor(of: .background))
@@ -268,23 +277,67 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         chosenCar.physicsBody?.categoryBitMask = carCategory // Is a car
         chosenCar.physicsBody?.contactTestBitMask = playerCategory // That checks for contact with player
         chosenCar.physicsBody?.collisionBitMask = 0 // But doesn't physically respond to that collision
-       
-        // Add it to both the scene and our tracker array
+        
         self.addChild(chosenCar)
+
         carsInTheScene.append(chosenCar)
+        
+        // Give it a shadow
+        let chosenCarShadow = SKSpriteNode(texture: tShadow)
+        
+        applyScale(to: chosenCarShadow, of: .entity)
+        chosenCarShadow.alpha = 0.3
+        chosenCarShadow.zPosition = 0
+        
+        let shadowInfo = ShadowInfo(shadow: chosenCarShadow, caster: chosenCar)
+       
+        self.addChild(chosenCarShadow)
+        
+        sceneShadowInfo.append(shadowInfo)
     }
 
     func updateCars(){
-        for car in carsInTheScene {
-            // Remove offscreen cars from the scene
+        var i = 0
+      
+        while i < carsInTheScene.count {
+            let car = carsInTheScene[i]
+           
+            // Remove any offscreen cars; this will trigger their shadow's removal as well
             if car.position.y <= -car.frame.height / 2 {
                 car.removeFromParent()
-                continue
+                carsInTheScene.remove(at: i)
+            }
+           
+            else {
+                // Any cars on screen should instantly respond to game speed changes, not just newly spawned ones
+                let dy: CGFloat = (scrollingSpeed - 25 * scaleFactor(of: .background)) * deltaTime
+                car.position.y -= dy
+               
+                // Move up!
+                i = i + 1
+            }
+        }
+    }
+   
+    func updateShadows() {
+        var i = 0
+        while i < sceneShadowInfo.count {
+            let info = sceneShadowInfo[i]
+
+            // If the caster has been removed from the scene, remove this shadow and this info entry
+            if info.caster.scene == nil {
+                info.shadow.removeFromParent()
+                sceneShadowInfo.remove(at: i)
             }
             
-            // Any cars on screen should instantly respond to game speed changes, not just newly spawned ones
-            let dy: CGFloat = (scrollingSpeed - 25 * scaleFactor(of: .background)) * deltaTime
-            car.position.y -= dy
+            else {
+                // Keep shadows on top of their casters
+                info.shadow.position = info.caster.position
+                info.shadow.zRotation = info.caster.zRotation
+               
+                // Go up!
+                i = i + 1
+            }
         }
     }
     
@@ -299,7 +352,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scrollBackground()
         movePlayer()
         updateCars()
-        
+        updateShadows()
+
         lastUpdateTime = currentTime
     }
 }
