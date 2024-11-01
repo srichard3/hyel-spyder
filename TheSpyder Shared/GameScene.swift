@@ -1,5 +1,6 @@
 import SpriteKit
 import GameplayKit
+import UIKit
 
 // TODO: Needed fixes
 // - [ ] Upon exiting and leaving app, bg. disappears, player goes crazy (very likely related to deltaTime calculation!)
@@ -22,25 +23,40 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case background
     }
 
+    // MARK: Delta Time
     var lastUpdateTime: TimeInterval = 0
     var deltaTime: CGFloat = 0
-    
+   
+    // MARK: Textures
     let tBackground = SKTexture(imageNamed: "road")
     let tPlayer = SKTexture(imageNamed: "player")
+    let tSpider = SKTexture(imageNamed: "spider")
     let tShadow = SKTexture(imageNamed: "shadow")
-    
+   
+    // MARK: Backgrounds
     var backgroundA: SKSpriteNode!
     var backgroundB: SKSpriteNode!
-   
+  
+    // MARK: Scaling
     var globalScale: CGFloat = 1
     var entityScale: CGFloat = 0.8
 
+    // MARK: Player
     var player: SKSpriteNode!
     var playerLanes = Array<CGPoint>()
     var playerLane = 0
     var playerRotation: CGFloat = 0
     let playerCategory: UInt32 = 0x1 << 0
-    
+       
+    // MARK: Spider
+    var spider: SKSpriteNode!
+    var spiderPosition: CGPoint!
+    var spiderAttackTimer: Timer!
+    let spiderAttackInterval: TimeInterval = 5
+    let spiderPeekDuration: TimeInterval = 3.0
+    let spiderSnatchDuration: TimeInterval = 0.5
+
+    // MARK: Cars
     var carSpawnTimer: Timer!
     var carSpawnInterval: TimeInterval = 0.75
     let carCategory: UInt32 = 0x1 << 1
@@ -52,8 +68,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         SKTexture(imageNamed: "car_y")
     ]
 
+    // MARK: Shadows
     var sceneShadowInfo = Array<ShadowInfo>()
-    
+   
+    // MARK: Score
     var scoreLabel: SKLabelNode!
 
     var scoreTimer: Timer!
@@ -64,12 +82,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     var baseScore: Int = 5
     var currentScore: Int = 0
-    
+
+    // MARK: Game Speed
     var gameSpeed: CGFloat = 600
     var speedupAmount: CGFloat = 120
     var scoreUntilSpeedup: Int = 50
     var scoreUntilSpeedupIncrease: Int = 100
 
+    // MARK: Haptic Feedback
+    let hapticFeedback = UIImpactFeedbackGenerator(style: .light)
+    
     /// Get the appropriate scale factor relative to the specified object type.
     /// Intended to make scale calculations a bit more readable!
     func scaleFactor(of type: GameObjectType) -> CGFloat {
@@ -101,6 +123,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Setup textures
         tBackground.filteringMode = .nearest
         tPlayer.filteringMode = .nearest
+        tSpider.filteringMode = .nearest
         tShadow.filteringMode = .nearest
        
         for carTexture in possibleCars {
@@ -211,8 +234,84 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scoreLabel.zPosition = 3
 
         addChild(scoreLabel)
+        
+        // Set up spider
+        spider = SKSpriteNode(texture: tSpider)
+
+        applyScale(to: spider, of: .entity)
+        spider.zPosition = 2
+        spider.position = CGPoint(
+            x: frame.midX,
+            y: -spider.frame.height
+        )
+      
+        spiderPosition = spider.position // This secondary position will be used to lerp
+
+        addChild(spider)
+        
+        // Its timer too!
+        spiderAttackTimer = Timer.scheduledTimer(withTimeInterval: spiderAttackInterval, repeats: false) { timer in
+            timer.invalidate()
+            self.spiderAttack() // This will re-initialize the attack timer; we need to do this because there are timed events inside this function that would conflict with this timer
+        }
     }
- 
+
+    @objc func spiderAttack(){
+        // Pick random lane's x value
+        let chosenLaneX: CGFloat = playerLanes[Int.random(in: 0..<playerLanes.count)].x
+        
+        // Move to peek
+        let moveToPeek = SKAction.run {
+            self.spiderPosition.x = chosenLaneX
+            self.spiderPosition.y = 0
+        }
+        
+        // Wait
+        let stayPeeked = SKAction.wait(forDuration: spiderPeekDuration)
+        
+        // Snatch!
+        let snatch = SKAction.run {
+            self.spiderPosition.x = chosenLaneX
+            self.spiderPosition.y = self.player.position.y
+        }
+        
+        // Stay in snatching position for a bit
+        let staySnatching = SKAction.wait(forDuration: spiderSnatchDuration)
+        
+        // Move back down
+        let moveBackDown = SKAction.run {
+            self.spiderPosition.x = self.frame.midX
+            self.spiderPosition.y = -self.spider.frame.height
+        }
+    
+        // Reinitialize timer
+        let restartTimer = SKAction.run {
+            self.spiderAttackTimer = Timer.scheduledTimer(withTimeInterval: self.spiderAttackInterval, repeats: true) { timer in
+                timer.invalidate()
+                self.spiderAttack()
+            }
+        }
+        
+        // Run sequence
+        let sequence = [
+            moveToPeek,
+            stayPeeked,
+            snatch,
+            staySnatching,
+            moveBackDown,
+            restartTimer
+        ]
+        
+        spider.run(SKAction.sequence(sequence))
+    }
+   
+    func moveSpider(){
+        let smoothTime = 7.5
+        
+        spider.position.x = lerp(start: spider.position.x, end: spiderPosition.x, t: smoothTime * deltaTime)
+        spider.position.y = lerp(start: spider.position.y, end: spiderPosition.y, t: smoothTime * deltaTime)
+    }
+    
     func handleGameSpeed(){
         // If we surpass the current speedup threshold, increase game speed, score multiplier, and raise the threshold!
         if currentScore >= scoreUntilSpeedup {
@@ -228,6 +327,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     @objc func handleSwipe(_ gesture: UISwipeGestureRecognizer){
+        // Play haptic feedback
+        hapticFeedback.impactOccurred()
+
+        // Change player direction
         switch (gesture.direction){
         case .left:
             if playerLane - 1 >= 0 {
@@ -372,6 +475,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         scrollBackground()
         movePlayer()
+        moveSpider()
         updateCars()
         updateShadows()
         handleGameSpeed()
