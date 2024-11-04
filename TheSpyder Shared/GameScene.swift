@@ -71,7 +71,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         backgroundA = SKSpriteNode(texture: tBackground)
 
         backgroundA.setScale(globalScale)
-        backgroundA.zPosition = -1
+        backgroundA.zPosition = CGFloat(GameObjectType.background.rawValue)
         backgroundA.position = CGPoint(
             x: view.frame.width / 2,
             y: view.frame.height / 2
@@ -100,7 +100,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         spider = Spider(
             scale: globalScale,
             texture: tSpider,
-            shadow: tShadow,
+            shadow: nil,
             target: self
         )
         
@@ -143,6 +143,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func update(_ currentTime: TimeInterval) {
         // Avoid very large initial deltaTime
+        // MARK: This starts tweaking when we've left the app for a long time; set it correctly in some sort of callback?
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
         }
@@ -150,6 +151,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         deltaTime = currentTime - lastUpdateTime as CGFloat
 
         // Run game functionality here
+        scrollBackground()
+        player.update()
+        // spider.update()
         
         lastUpdateTime = currentTime
     }

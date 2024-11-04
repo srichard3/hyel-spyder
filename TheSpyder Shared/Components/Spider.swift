@@ -8,7 +8,7 @@ class Spider{
     let peekDuration: TimeInterval = 3.0
     let snatchDuration: TimeInterval = 0.5
     
-    init(scale: CGFloat, texture: SKTexture, shadow: SKTexture, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
+    init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
         // Set up entity
         self.entity = Entity(scale: scale, texture: texture, shadow: shadow, target: target, type: GameObjectType.spider, startPos: startPos)
     }
@@ -63,5 +63,9 @@ class Spider{
         ]
         
         self.entity.node.run(SKAction.sequence(sequence))
+    }
+    
+    public func update(){
+        entity.update()
     }
 }

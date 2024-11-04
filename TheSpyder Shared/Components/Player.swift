@@ -5,7 +5,7 @@ class Player{
     var lanes = Array<CGPoint>()
     var lane: Int = 0
 
-    init(scale: CGFloat, texture: SKTexture, shadow: SKTexture, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
+    init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
         // Set up entity
         self.entity = Entity(scale: scale, texture: texture, shadow: shadow, target: target, type: GameObjectType.player, startPos: startPos)
     }
@@ -23,12 +23,11 @@ class Player{
         // ...
         for i in stride(from: 0, to: laneCount, by: 1) {
             let t = CGFloat(i)
-            lanes.append(
-                CGPoint(
-                    x: (pad + (t * laneWidth) + (laneWidth / 2 - t)) * scale - offshoot,
-                    y: self.entity.position.y // The desired y-position must be set before calling this!
-                )
-            )
+            
+            let laneX = (pad + (t * laneWidth) + (laneWidth / 2 - t)) * scale - offshoot
+            let laneY = self.entity.node.position.y
+            
+            lanes.append(CGPoint(x: laneX, y: laneY))
         }
     }
 
@@ -47,10 +46,19 @@ class Player{
             return
         }
     }
-    
-    public func update(){
+  
+    private func moveEffect(){
+        // No move effect possible if there's no defined places to move towards
+        if lanes.count == 0 {
+            return;
+        }
+        
         // Take a small fraction of the inverted remaining distance to the target lane to rotate the player node a bit when moving it
         let xTargetLaneDistance = lanes[lane].x - entity.node.position.x
-        entity.rotation = -xTargetLaneDistance * 0.0125
+        entity.node.zRotation = -xTargetLaneDistance * 0.0125
+    }
+    
+    public func update(){
+        entity.update()
     }
 }
