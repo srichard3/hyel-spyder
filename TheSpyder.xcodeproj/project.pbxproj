@@ -16,6 +16,13 @@
 			membershipExceptions = (
 				Actions.sks,
 				Assets.xcassets,
+				Components/Car.swift,
+				Components/CarSpawner.swift,
+				Components/Entity.swift,
+				Components/Player.swift,
+				Components/ScoreKeeper.swift,
+				Components/SpeedKeeper.swift,
+				Components/Spider.swift,
 				font.ttf,
 				GameScene.sks,
 				GameScene.swift,
