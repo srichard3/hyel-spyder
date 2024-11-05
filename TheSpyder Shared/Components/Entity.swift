@@ -17,7 +17,7 @@ enum GameObjectType: UInt32 {
 }
 
 /// Simple linear interpolation; use with movement!
-func lerp(start: CGFloat, end: CGFloat, t: CGFloat) -> CGFloat{
+func lerp(_ start: CGFloat, _ end: CGFloat, _ t: CGFloat) -> CGFloat{
     return (1 - t) * start + t * end
 }
 

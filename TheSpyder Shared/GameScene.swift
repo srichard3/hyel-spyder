@@ -95,6 +95,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             x: view.frame.width / 2,
             y: (player.entity.node.frame.height / 2) + (30 * player.entity.node.yScale) //  Place the player an arbitrary value above the bottom of the screen, multiplied by the global scale
         )
+        
+        player.calculateLanes(
+            scale: globalScale,
+            offshoot: (backgroundA.frame.width - view.frame.width) / 0.5, // MARK: Everything should be in unscaled pixel coordinates; is this?
+            pad: 18,
+            laneWidth: 22,
+            laneCount: 3
+        )
 
         // Setup spider
         spider = Spider(
@@ -120,9 +128,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     @objc func handleSwipe(_ gesture: UISwipeGestureRecognizer){
         // Play haptic feedback
         hapticFeedback.impactOccurred()
-
+        
         // Change player direction
-        player.move(towards: gesture.direction)
+        player.changeDirection(to: gesture.direction)
     }
    
     func scrollBackground(){
@@ -152,8 +160,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // Run game functionality here
         scrollBackground()
-        player.update()
-        // spider.update()
+        player.update(with: deltaTime)
         
         lastUpdateTime = currentTime
     }
