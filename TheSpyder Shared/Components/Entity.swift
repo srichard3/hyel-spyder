@@ -37,18 +37,11 @@ class Entity{
             self.shadow = SKSpriteNode(texture: shadow)
         }
 
-        // Set thieir scale together
-        var appliedScale: CGFloat = 1.0
-        
-        switch type {
-        default:
-            appliedScale = scale * 0.8
-        }
-
-        node.setScale(appliedScale)
+        // Scale them
+        node.setScale(scale)
         
         if let entityShadow = self.shadow {
-            entityShadow.setScale(appliedScale)
+            entityShadow.setScale(scale)
         }
 
         // Finish setting up the node first
@@ -88,7 +81,15 @@ class Entity{
             target.addChild(entityShadow)
         }
     }
- 
+
+    public func removeFromTarget(){
+        // Remove body and shadow nodes from the parent
+        node.removeFromParent()
+        if shadow != nil {
+            shadow?.removeFromParent()
+        }
+    }
+    
     /// Keep shadow on the caster
     public func update(){
         // MARK: The car uses its physics body to move, and it seems to cause this shadow to be off-center...

@@ -78,9 +78,26 @@ class CarSpawner{
         if cars.isEmpty {
             return
         }
-        
-        for car in cars {
-            car.entity.update()
+       
+        var i = 0
+        while i < cars.count {
+            let currentCar = cars[i]
+
+            // Remove car if off screen
+            if currentCar.entity.node.position.y <= -currentCar.entity.node.frame.height / 2 {
+                // Remove from scene
+                currentCar.entity.removeFromTarget()
+                
+                // Remove from tracker array, which should mark it for garbage collection
+                cars.remove(at: i)
+            }
+           
+            // If not, update it!
+            else{
+                currentCar.entity.update()
+               
+                i = i + 1
+            }
         }
     }
 }

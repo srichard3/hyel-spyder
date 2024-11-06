@@ -82,15 +82,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
        
         // Setup player
         player = Player(
-            scale: globalScale,
+            scale: globalScale * 0.8,
             texture: tPlayer,
             shadow: tShadow,
-            target: self
-        )
-        
-        player.entity.node.position = CGPoint(
-            x: view.frame.width / 2,
-            y: (player.entity.node.frame.height / 2) + (30 * player.entity.node.yScale) //  Place the player an arbitrary value above the bottom of the screen, multiplied by the global scale
+            target: self,
+            startPos: CGPoint(
+                x: view.frame.width / 2,
+                y: (tPlayer.size().height * 0.8 * globalScale / 2) + (30 * globalScale) // MARK: This calculation is being done by hand, using magic numbers that pertain to variables...
+            )
         )
         
         player.calculateLanes(
@@ -106,14 +105,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             scale: globalScale,
             texture: tSpider,
             shadow: nil,
-            target: self
+            target: self,
+            startPos: CGPoint(
+                x: frame.midX,
+                y: -tSpider.size().height * globalScale
+            )
         )
         
-        spider.entity.node.position = CGPoint(
-            x: frame.midX,
-            y: -spider.entity.node.frame.height
-        )
-       
         // Setup score keeper
         ScoreKeeper.shared.addLabelToScene(self)
        
@@ -124,7 +122,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             possibleLanes: player.lanes,
             carShadow: tShadow,
             carSpeed: SpeedKeeper.shared.speed - 30,
-            carScale: globalScale
+            carScale: globalScale * 0.8
         )
         
         // Begin spawning cars
@@ -169,7 +167,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scrollBackground()
         player.update(with: deltaTime)
         CarSpawner.shared.updateCars()
-        
+                
         lastUpdateTime = currentTime
     }
 }
