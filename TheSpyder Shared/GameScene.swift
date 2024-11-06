@@ -98,7 +98,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         player.calculateLanes(
             scale: globalScale,
-            offshoot: (backgroundA.frame.width - view.frame.width) / 0.5, // MARK: Everything should be in unscaled pixel coordinates; is this?
+            offshoot: (backgroundA.frame.width - view.frame.width) * 0.5, // MARK: Everything should be in unscaled pixel coordinates; is this?
             pad: 18,
             laneWidth: 22,
             laneCount: 3

@@ -72,20 +72,22 @@ class Player{
         if lanes.isEmpty {
             return
         }
+       
+        print("\(targetPos.x), \(targetPos.y)")
         
         targetPos.x = lanes[lane].x
         targetPos.y = lanes[lane].y
         
         entity.node.position.x = lerp(entity.node.position.x, targetPos.x, smoothTime * deltaTime)
-        entity.node.position.y = lerp(entity.node.position.x, targetPos.y, smoothTime * deltaTime)
+        entity.node.position.y = lerp(entity.node.position.y, targetPos.y, smoothTime * deltaTime)
        
         // Add some rotation
         let xDistanceToLane: CGFloat = lanes[lane].x - entity.node.position.x
-        entity.node.zRotation = lerp(entity.node.zRotation, xDistanceToLane * 0.0125, smoothTime * deltaTime)
+        entity.node.zRotation = lerp(entity.node.zRotation, -xDistanceToLane * 0.0125, smoothTime * deltaTime)
     }
 
     public func update(with deltaTime: CGFloat){
+        lerpMove(with: deltaTime) // Must update player position before shadow's position is updated!
         entity.update()
-        lerpMove(with: deltaTime)
     }
 }
