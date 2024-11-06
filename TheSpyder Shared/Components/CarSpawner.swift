@@ -4,6 +4,8 @@ import SpriteKit
 class CarSpawner{
     static let shared = CarSpawner()
 
+    var targetScene: SKScene?
+   
     var cars = Array<Car>()
     
     var spawnTimer: Timer?
@@ -11,66 +13,74 @@ class CarSpawner{
     
     var possibleCars: [SKTexture]?
     var possibleLanes: [CGPoint]?
-    
-    public func setPossibleCars(to cars: [SKTexture]){
-        // Get possible car spawns as a list of loaded textures
-        // We want all texture loading to happen in one place!
-        self.possibleCars = cars
-    }
+    var carShadowTexture: SKTexture?
+    var carSpeed: CGFloat = 1
+    var carScale: CGFloat = 1
    
-    public func setPossibleLanes(to lanes: [CGPoint]){
-        self.possibleLanes = lanes
+    /// Configures the car spawner with the parameters it needs.
+    public func configure(targetScene: SKScene, possibleCars: [SKTexture]?, possibleLanes: [CGPoint]?, carShadow: SKTexture?, carSpeed: CGFloat, carScale: CGFloat){
+        self.targetScene = targetScene
+        self.possibleCars = possibleCars
+        self.possibleLanes = possibleLanes
+        self.carShadowTexture = carShadow
+        self.carSpeed = carSpeed
+        self.carScale = carScale
     }
     
     @objc func spawnCar(){
-        if self.possibleCars == nil || self.possibleLanes == nil {
+        if self.targetScene == nil || self.possibleCars == nil || self.possibleLanes == nil {
             return
         }
-
+        
         // Pick a random lane and car
         let chosenLane: CGPoint = self.possibleLanes![Int.random(in: 0..<self.possibleLanes!.count)]
         let chosenCarTexture: SKTexture = possibleCars![Int.random(in: 0..<possibleCars!.count)]
-        
-        // TODO: Set up the car using new class structure, the below is the old one
-        /*
-        applyScale(to: chosenCar, of: .entity)
-        chosenCar.zPosition = 1
-        chosenCar.position = CGPoint(
-            x: chosenLane.x,
-            y: self.frame.height + chosenCar.frame.height + (10 * scaleFactor(of: .background))
+   
+        // Create the car
+        let newCar = Car(
+            scale: self.carScale,
+            texture: chosenCarTexture,
+            shadow: carShadowTexture,
+            target: targetScene!,
+            startPos: CGPoint(x: chosenLane.x, y: targetScene!.frame.height + chosenCarTexture.size().height * carScale),
+            startVel: CGVector(dx: 0, dy: -carSpeed)
         )
-        chosenCar.physicsBody = SKPhysicsBody(rectangleOf: chosenCar.size)
-        chosenCar.physicsBody?.isDynamic = true
-        chosenCar.physicsBody?.categoryBitMask = carCategory // Is a car
-        chosenCar.physicsBody?.contactTestBitMask = playerCategory // That checks for contact with player
-        chosenCar.physicsBody?.collisionBitMask = 0 // But doesn't physically respond to that collision
-        
-        self.addChild(chosenCar)
-
-        carsInTheScene.append(chosenCar)
-        
-        // Give it a shadow
-        let chosenCarShadow = SKSpriteNode(texture: tShadow)
-        
-        applyScale(to: chosenCarShadow, of: .entity)
-        chosenCarShadow.alpha = 0.3
-        chosenCarShadow.zPosition = 0
-        
-        let shadowInfo = ShadowInfo(shadow: chosenCarShadow, caster: chosenCar)
        
-        self.addChild(chosenCarShadow)
-        
-        sceneShadowInfo.append(shadowInfo)
-        */
+        // Keep track of it
+        cars.append(newCar)
     }
    
     /// Begin spawning cars, giving it a set of possible lanes to pick from
     func start(){
-        
+        if self.targetScene == nil {
+            return
+        }
+       
+        // The target is where the selector is! Make sure the method of #selector is part of target
+        spawnTimer = Timer.scheduledTimer(
+            timeInterval: spawnInterval,
+            target: self,
+            selector: #selector(spawnCar),
+            userInfo: nil,
+            repeats: true
+        )
     }
    
     /// Stop spawning cars
     func stop(){
+        if self.spawnTimer != nil {
+            self.spawnTimer?.invalidate()
+            self.spawnTimer = nil
+        }
+    }
+    
+    public func updateCars(){
+        if cars.isEmpty {
+            return
+        }
         
+        for car in cars {
+            car.entity.update()
+        }
     }
 }

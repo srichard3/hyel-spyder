@@ -10,23 +10,12 @@ class Car{
         // Give start vel
         self.entity.node.physicsBody?.velocity = startVel
     }
-    
+   
+    /// Remove this car object from the screen
     public func killIfOffFrame(frame: CGRect){
-        // MARK: Before re-adding this, remove Entity first
-        /*
-        if entity.position.y <= -entity.node.frame.height / 2 {
-            car.removeFromParent()
-            carsInTheScene.remove(at: i)
-        }
-           
-        else {
-            // Any cars on screen should instantly respond to game speed changes, not just newly spawned ones
-            let dy: CGFloat = (gameSpeed - 25 * scaleFactor(of: .background)) * deltaTime
-            car.position.y -= dy
-           
-            // Move up!
-            i = i + 1
-        }
-        */
+        if entity.node.position.y <= -entity.node.frame.height / 2 {
+            entity.node.removeFromParent()
+            entity.shadow!.removeFromParent() // All cars have shadows so this unwrap is ok
+         }
     }
 }

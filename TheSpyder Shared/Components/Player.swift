@@ -73,8 +73,6 @@ class Player{
             return
         }
        
-        print("\(targetPos.x), \(targetPos.y)")
-        
         targetPos.x = lanes[lane].x
         targetPos.y = lanes[lane].y
         

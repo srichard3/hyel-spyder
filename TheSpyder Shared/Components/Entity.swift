@@ -60,7 +60,7 @@ class Entity{
         
         // Setup its physics body
         node.physicsBody = SKPhysicsBody(rectangleOf: node.size)
-        node.physicsBody?.isDynamic = false
+        node.physicsBody?.isDynamic = true
         node.physicsBody?.collisionBitMask = 0
         node.physicsBody?.categoryBitMask = type.rawValue
     
@@ -91,9 +91,10 @@ class Entity{
  
     /// Keep shadow on the caster
     public func update(){
-        if let entityShadow = self.shadow {
-            entityShadow.position = node.position
-            entityShadow.zRotation = node.zRotation
+        // MARK: The car uses its physics body to move, and it seems to cause this shadow to be off-center...
+        if shadow != nil {
+            shadow!.position = node.position
+            shadow!.zRotation = node.zRotation
         }
     }
 }

@@ -28,9 +28,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
    
     var player: Player!
     var spider: Spider!
-    var carSpawner: CarSpawner!
-    var scoreKeeper: ScoreKeeper!
-    var speedKeeper: SpeedKeeper!
    
     var swipeLeft: UISwipeGestureRecognizer!
     var swipeRight: UISwipeGestureRecognizer!
@@ -119,9 +116,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
        
         // Setup score keeper
         ScoreKeeper.shared.addLabelToScene(self)
-        
+       
         // Setup car spawner
-        CarSpawner.shared.setPossibleCars(to: tCars)
+        CarSpawner.shared.configure(
+            targetScene: self,
+            possibleCars: tCars,
+            possibleLanes: player.lanes,
+            carShadow: tShadow,
+            carSpeed: SpeedKeeper.shared.speed - 30,
+            carScale: globalScale
+        )
+        
+        // Begin spawning cars
+        CarSpawner.shared.start()
     }
 
     
@@ -161,6 +168,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Run game functionality here
         scrollBackground()
         player.update(with: deltaTime)
+        CarSpawner.shared.updateCars()
         
         lastUpdateTime = currentTime
     }
