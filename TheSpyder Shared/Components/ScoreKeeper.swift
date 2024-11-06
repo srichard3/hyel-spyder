@@ -40,11 +40,20 @@ class ScoreKeeper{
 
     /// Start keeping score
     public func start(){
-       
+        awardTimer = Timer.scheduledTimer(
+            timeInterval: awardInterval,
+            target: self,
+            selector: #selector(addScore),
+            userInfo: nil,
+            repeats: true
+        )
     }
-  
+
     /// Stop keeping score
     public func stop(){
-        
+        if self.awardTimer != nil {
+            self.awardTimer?.invalidate()
+            self.awardTimer = nil
+        }
     }
 }

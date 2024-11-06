@@ -10,6 +10,7 @@ class CarSpawner{
     
     var spawnTimer: Timer?
     var spawnInterval: TimeInterval = 0.75
+    var spawnIntervalDecrement: CGFloat = 0.05
     
     var possibleCars: [SKTexture]?
     var possibleLanes: [CGPoint]?

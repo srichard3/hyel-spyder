@@ -16,6 +16,8 @@ class SpeedKeeper{
             speed += speedupAmount
             scoreUntilSpeedup += scoreUntilSpeedupIncrement
             ScoreKeeper.shared.multiplier += ScoreKeeper.shared.multiplierIncrement
+            CarSpawner.shared.carSpeed = SpeedKeeper.shared.speed - 30
+            CarSpawner.shared.spawnInterval -= CarSpawner.shared.spawnIntervalDecrement
         }
     }
 }

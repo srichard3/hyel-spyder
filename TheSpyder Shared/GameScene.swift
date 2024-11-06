@@ -88,7 +88,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             target: self,
             startPos: CGPoint(
                 x: view.frame.width / 2,
-                y: (tPlayer.size().height * 0.8 * globalScale / 2) + (30 * globalScale) // MARK: This calculation is being done by hand, using magic numbers that pertain to variables...
+                y: (tPlayer.size().height * 0.8 * globalScale / 2) + (30 * globalScale) // MARK: This calculation is being done by hand, using magic numbers that pertain to things that should be variables...
             )
         )
         
@@ -127,9 +127,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // Begin spawning cars
         CarSpawner.shared.start()
+        
+        // Begin keeping score
+        ScoreKeeper.shared.start()
     }
 
-    
     @objc func handleSwipe(_ gesture: UISwipeGestureRecognizer){
         // Play haptic feedback
         hapticFeedback.impactOccurred()
@@ -156,17 +158,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func update(_ currentTime: TimeInterval) {
         // Avoid very large initial deltaTime
-        // MARK: This starts tweaking when we've left the app for a long time; set it correctly in some sort of callback?
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
         }
     
-        deltaTime = currentTime - lastUpdateTime as CGFloat
+        deltaTime = currentTime - lastUpdateTime as CGFloat // MARK: This starts tweaking when we've left the app for a long time; set it correctly in some sort of callback?
 
         // Run game functionality here
         scrollBackground()
         player.update(with: deltaTime)
         CarSpawner.shared.updateCars()
+        SpeedKeeper.shared.update()
                 
         lastUpdateTime = currentTime
     }
