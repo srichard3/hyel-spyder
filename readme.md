@@ -1,13 +1,3 @@
-# Game States
-
-## Title
-
-- No cars spawning
-- No speeding up 
-- Score keeper & label inactive
-- Ignore swipes, only register taps
-
-
 # Code Design Rules 
 
 This is a small set of principles in how the code should be treated!
