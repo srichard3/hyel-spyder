@@ -96,7 +96,10 @@ class CarSpawner{
             // If not, update it!
             else{
                 currentCar.entity.update()
-               
+              
+                // Make cars respond to velocity changes in real time
+                currentCar.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -carSpeed)
+                
                 i = i + 1
             }
         }

@@ -1,14 +1,12 @@
-# To-Do's
+# Game States
 
-- [ ] Ensure all class functions have some kind of documentation, even if it's simple; it's good habit!
-- [ ] Remove `Entity` and replace members using it for `SKSpriteNode`
-    - `Entity` only adds movement by lerp and shadows, really
-    - Lerp means extra position and rotation members on top of the ones in its `SKSpriteNode`
-    - This is confusing 
-    - And not every `Entity` uses lerp, anyway!
-    - We can simply have appropriately composed Lerp movement for whatever objects need it
-    - As for shadows, we can literally child its `SKSpriteNode` to the parent node's; easy to do on init
-    - Conclusion: *Remove `Entity` altogether!*
+## Title
+
+- No cars spawning
+- No speeding up 
+- Score keeper & label inactive
+- Ignore swipes, only register taps
+
 
 # Code Design Rules 
 

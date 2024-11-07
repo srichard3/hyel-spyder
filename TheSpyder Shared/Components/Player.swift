@@ -12,6 +12,9 @@ class Player{
     init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
         // Set up entity
         self.entity = Entity(scale: scale, texture: texture, shadow: shadow, target: target, type: GameObjectType.player, startPos: startPos)
+       
+        // Use precise collision
+        self.entity.node.physicsBody?.usesPreciseCollisionDetection = true
         
         targetPos = CGPoint(x: 0, y: 0)
         targetRot = 0
@@ -56,15 +59,6 @@ class Player{
         default:
             return
         }
-    }
-  
-    private func rotationEffect(){
-        // No move effect possible if there's no defined places to move towards
-        if lanes.count == 0 {
-            return;
-        }
-        
-        // Take a small fraction of the inverted remaining distance to the target lane to rotate the player node a bit when moving it
     }
   
     /// Move the player node using interpolation instead of its physics body

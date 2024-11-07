@@ -20,4 +20,10 @@ class SpeedKeeper{
             CarSpawner.shared.spawnInterval -= CarSpawner.shared.spawnIntervalDecrement
         }
     }
+    
+    public func freeze(){
+        // Make all speed 0; will we ever need to unfreeze?
+        speed = 0
+        CarSpawner.shared.carSpeed = 0
+    }
 }
