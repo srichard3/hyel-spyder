@@ -1,0 +1,27 @@
+Power-ups:
+    RNG:
+        - Keep probability table, 1-100
+        - A range represents an action
+        - Gen. random number and evaluate against this table
+            e.g. 0-10 corresponds to spawning some powerup, so if I roll a 5, I'll do that
+    Activation
+        - On collide with powerup, check its effect; the effect is an enum defined per object; it's not the name of the powerup in case we want to change it later
+        - Powerups have an effective duration, use a timer; if the powerup acts instantaneously, make that timer's duration 0 
+        - There will be callbacks at the beginning + end of the timer, following a set -> unset pattern
+        - For now, make all powerups trigger instantaneously, but the idea is to make the blank act on doubletap
+        - If the player collects a powerup that's currently in effect, reset that powerup's run timer to 0 
+         
+        Summary:
+            1. On collide, check type 
+            2. Depending on type, run a series of setter callbacks bound to a timer
+            3. Use a finish block to unset what the callbacks did after the timer expires
+            
+Checking ranges:
+    - Keep a table of items mapped to a weight w
+    - From this initial table, generate new table, where each item will exist w times
+    - And now just choose a random item from the table!
+
+Fixes/reworks:
+    - Parameterize scene instead of making it a member for spawner (and wherever else is found)
+    - Indexing textures requires unwrapping, make it so it doesn't?
+    - Stuff keeps spawning after closing the app (in general, everything blows up when we close the app...)

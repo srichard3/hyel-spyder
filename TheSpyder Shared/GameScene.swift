@@ -173,10 +173,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
    
     func configureSpawner(){
         // Organize powerup and car textures for spawner to draw from
-        let powerupTextures: Dictionary<String, SKTexture> = [
-            "drink" : textures["drink"]!,
-            "freshener" : textures["freshener"]!,
-            "horn" : textures["horn"]!
+        let powerupTextures: Dictionary<GameObjectType, SKTexture> = [
+            .freshener : textures["freshener"]!,
+            .drink : textures["drink"]!,
+            .horn : textures["horn"]!
         ]
       
         let carTextures = [
@@ -186,7 +186,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             textures["car_yellow"]!,
         ]
         
-
         // Setup spawner
         Spawner.shared.configure(
             targetScene: self,
@@ -236,7 +235,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
             spider.start()
             
-            Spawner.shared.start()
+            Spawner.shared.start(within: self)
             
             ScoreKeeper.shared.start()
             ScoreKeeper.shared.label.isHidden = false
@@ -314,7 +313,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Perform the necessary checks!
         switch otherBody.categoryBitMask {
         case Entity.categoryBitmaskOf(.car):
-            print("player hit a car!")
+            print("hit car")
+        case Entity.categoryBitmaskOf(.freshener):
+            print("hit freshener")
+        case Entity.categoryBitmaskOf(.horn):
+            print("hit horn")
+        case Entity.categoryBitmaskOf(.drink):
+            print("hit drink")
         default:
             return
         }
@@ -331,7 +336,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         hapticFeedback.impactOccurred()
 
         // Play swipe sound
-        self.run(SKAction.playSoundFileNamed("hide", waitForCompletion: false))
+        // self.run(SKAction.playSoundFileNamed("hide", waitForCompletion: false))
         
         // No actions save for a tap to reset should be taken in game over
         if gameState == .gameOver {

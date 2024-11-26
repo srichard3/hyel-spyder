@@ -5,10 +5,12 @@ enum GameObjectType: UInt32 {
     case background = 0
     case shadow = 1
     case car = 2
-    case powerup = 3
-    case player = 4
-    case spider = 5
-    case gui = 6
+    case horn = 3
+    case freshener = 4
+    case drink = 5
+    case player = 6
+    case spider = 7
+    case gui = 8
 }
 
 /// Simple linear interpolation

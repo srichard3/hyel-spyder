@@ -4,18 +4,16 @@ import SpriteKit
 class Spawner{
     static let shared = Spawner()
 
-    var targetScene: SKScene?
-    
     var spawnTimer: Timer?
     var spawnInterval: TimeInterval = 0.75
     var spawnIntervalDecrement: CGFloat = 0.05
   
-    var spawnChoiceTable = Array<String>()
-    var spawnWeights = [
-        "car" : 90,
-        "horn" : 2,
-        "freshener" : 5,
-        "drink" : 3
+    var spawnChoiceTable = Array<GameObjectType>()
+    var spawnWeights: Dictionary<GameObjectType, Int> = [
+        .car : 90,
+        .horn : 2,
+        .drink : 5,
+        .freshener : 3
     ]
 
     var cars = Array<Car>()
@@ -25,14 +23,13 @@ class Spawner{
     var carScale: CGFloat = 1
   
     var powerups = Array<Powerup>()
-    var powerupTextures: Dictionary<String, SKTexture>?
+    var powerupTextures: Dictionary<GameObjectType, SKTexture>?
     var powerupScale: CGFloat = 1
     
     var speed: CGFloat = 1
 
     /// Configures the car spawner with the parameters it needs.
-    public func configure(targetScene: SKScene, possibleCars: [SKTexture], possibleLanes: [CGPoint], powerupTextures: Dictionary<String, SKTexture>, carShadow: SKTexture?, carSpeed: CGFloat, carScale: CGFloat){
-        self.targetScene = targetScene
+    public func configure(targetScene: SKScene, possibleCars: [SKTexture], possibleLanes: [CGPoint], powerupTextures: Dictionary<GameObjectType, SKTexture>, carShadow: SKTexture?, carSpeed: CGFloat, carScale: CGFloat){
         self.possibleCars = possibleCars
         self.possibleLanes = possibleLanes
         self.powerupTextures = powerupTextures
@@ -52,7 +49,7 @@ class Spawner{
         }
     }
     
-    @objc func spawnSomething(){
+    @objc func spawnSomething(in scene: SKScene){
         if spawnChoiceTable.isEmpty {
             return
         }
@@ -61,32 +58,29 @@ class Spawner{
         let chosenLane: CGPoint = self.possibleLanes![Int.random(in: 0..<self.possibleLanes!.count)]
         let randomItem = spawnChoiceTable[Int.random(in: 0..<spawnChoiceTable.count)]
     
-        print("spawning \(randomItem)!")
-        
-        // We will either spawn a car or a powerup
-        if randomItem == "car" {
-            // Create
+        // We will either spawn a car...
+        if randomItem == GameObjectType.car {
             let chosenCarTexture: SKTexture = possibleCars![Int.random(in: 0..<possibleCars!.count)]
             let newCar = Car(
                 scale: self.carScale,
                 texture: chosenCarTexture,
                 shadow: carShadowTexture,
-                target: targetScene!,
-                startPos: CGPoint(x: chosenLane.x, y: targetScene!.frame.height + chosenCarTexture.size().height * carScale),
+                target: scene,
+                startPos: CGPoint(x: chosenLane.x, y: scene.frame.height + chosenCarTexture.size().height * carScale),
                 startVel: CGVector(dx: 0, dy: -speed)
             )
             
-            // Keep track
             cars.append(newCar)
+        // Or a powerup
         } else {
-            // Same generation pattern here
             let chosenPowerupTexture = powerupTextures![randomItem]
             let newPowerup = Powerup(
                 scale: self.carScale,
                 texture: chosenPowerupTexture!,
                 shadow: carShadowTexture,
-                target: targetScene!,
-                startPos: CGPoint(x: chosenLane.x, y: targetScene!.frame.height + chosenPowerupTexture!.size().height * carScale),
+                target: scene,
+                type: randomItem,
+                startPos: CGPoint(x: chosenLane.x, y: scene.frame.height + chosenPowerupTexture!.size().height * carScale),
                 startVel: CGVector(dx: 0, dy: -speed)
             )
             
@@ -94,30 +88,22 @@ class Spawner{
         }
     }
     
-    /// Begin spawning cars, giving it a set of possible lanes to pick from
-    func start(){
-        if self.targetScene == nil {
-            return
+    /// Start spawner
+    func start(within scene: SKScene){
+        spawnTimer = Timer.scheduledTimer(withTimeInterval: spawnInterval, repeats: true) { timer in
+            self.spawnSomething(in: scene)
         }
-       
-        // The target is where the selector is! Make sure the method of #selector is part of target
-        spawnTimer = Timer.scheduledTimer(
-            timeInterval: spawnInterval,
-            target: self,
-            selector: #selector(spawnSomething),
-            userInfo: nil,
-            repeats: true
-        )
     }
    
-    /// Stop spawning cars
+    /// Stop spawner
     public func stop(){
         if self.spawnTimer != nil {
             self.spawnTimer?.invalidate()
             self.spawnTimer = nil
         }
     }
-   
+  
+    /// Clear everything the spawner is responsible for
     public func clear(){
         // Detach all powerups and cars from parent scene
         for car in cars {
