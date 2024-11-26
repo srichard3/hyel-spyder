@@ -11,7 +11,7 @@ enum GameObjectType: UInt32 {
     case gui = 6
 }
 
-/// Simple linear interpolation; use with movement!
+/// Simple linear interpolation
 func lerp(_ start: CGFloat, _ end: CGFloat, _ t: CGFloat) -> CGFloat{
     return (1 - t) * start + t * end
 }
@@ -51,13 +51,9 @@ class Entity{
         node.physicsBody?.isDynamic = true
         node.physicsBody?.collisionBitMask = 0
         node.physicsBody?.categoryBitMask = type.rawValue
-    
-        switch type {
-        case .player:
-            node.physicsBody?.contactTestBitMask = GameObjectType.car.rawValue | GameObjectType.spider.rawValue
-        default:
-            node.physicsBody?.contactTestBitMask = 0
-        }
+   
+        // Set its contact tests
+        node.physicsBody?.contactTestBitMask = Entity.contactTestFor(type)
        
         // Add to scene
         target.addChild(node)
@@ -73,17 +69,32 @@ class Entity{
         }
     }
 
+    /// Get the appropriate contact test bitmask of the given game object type
+    public static func contactTestFor(_ type: GameObjectType) -> UInt32 {
+        switch type {
+        case .player:
+            return GameObjectType.car.rawValue | GameObjectType.spider.rawValue
+        default:
+            return 0
+        }
+    }
+   
+    /// Get the category bitmask of a game object type
+    public static func categoryBitmaskOf(_ type: GameObjectType) -> UInt32 {
+        return type.rawValue
+    }
+    
+    // Remove body and shadow nodes from the parent
     public func removeFromTarget(){
-        // Remove body and shadow nodes from the parent
         node.removeFromParent()
         if shadow != nil {
             shadow?.removeFromParent()
         }
     }
     
-    /// Keep shadow on the caster
     public func update(){
-        // MARK: The car uses its physics body to move, and it seems to cause this shadow to be off-center...
+        // Keep shadow on the caster
+        // NOTe: The car uses its physics body to move, and it seems to cause this shadow to be off-center...
         if shadow != nil {
             shadow!.position = node.position
             shadow!.zRotation = node.zRotation

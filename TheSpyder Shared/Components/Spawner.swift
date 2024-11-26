@@ -22,12 +22,13 @@ class Spawner{
     var possibleCars: [SKTexture]?
     var possibleLanes: [CGPoint]?
     var carShadowTexture: SKTexture?
-    var carSpeed: CGFloat = 1
     var carScale: CGFloat = 1
   
     var powerups = Array<Powerup>()
     var powerupTextures: Dictionary<String, SKTexture>?
     var powerupScale: CGFloat = 1
+    
+    var speed: CGFloat = 1
 
     /// Configures the car spawner with the parameters it needs.
     public func configure(targetScene: SKScene, possibleCars: [SKTexture], possibleLanes: [CGPoint], powerupTextures: Dictionary<String, SKTexture>, carShadow: SKTexture?, carSpeed: CGFloat, carScale: CGFloat){
@@ -36,7 +37,7 @@ class Spawner{
         self.possibleLanes = possibleLanes
         self.powerupTextures = powerupTextures
         self.carShadowTexture = carShadow
-        self.carSpeed = carSpeed
+        self.speed = carSpeed
         self.carScale = carScale
      
         // Add each item (weight) times to the choice table
@@ -59,7 +60,9 @@ class Spawner{
         // Choose random lane and spawn a random item on it
         let chosenLane: CGPoint = self.possibleLanes![Int.random(in: 0..<self.possibleLanes!.count)]
         let randomItem = spawnChoiceTable[Int.random(in: 0..<spawnChoiceTable.count)]
-      
+    
+        print("spawning \(randomItem)!")
+        
         // We will either spawn a car or a powerup
         if randomItem == "car" {
             // Create
@@ -70,7 +73,7 @@ class Spawner{
                 shadow: carShadowTexture,
                 target: targetScene!,
                 startPos: CGPoint(x: chosenLane.x, y: targetScene!.frame.height + chosenCarTexture.size().height * carScale),
-                startVel: CGVector(dx: 0, dy: -carSpeed)
+                startVel: CGVector(dx: 0, dy: -speed)
             )
             
             // Keep track
@@ -84,7 +87,7 @@ class Spawner{
                 shadow: carShadowTexture,
                 target: targetScene!,
                 startPos: CGPoint(x: chosenLane.x, y: targetScene!.frame.height + chosenPowerupTexture!.size().height * carScale),
-                startVel: CGVector(dx: 0, dy: -carSpeed)
+                startVel: CGVector(dx: 0, dy: -speed)
             )
             
             powerups.append(newPowerup)
@@ -150,33 +153,7 @@ class Spawner{
                     currentCar.entity.update()
                     
                     // Make cars respond to velocity changes in real time
-                    currentCar.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -carSpeed)
-                    
-                    i = i + 1
-                }
-            }
-        }
-        
-        if !powerups.isEmpty {
-            var i = 0
-            while i < cars.count {
-                let currentCar = cars[i]
-                
-                // Remove car if off screen
-                if currentCar.entity.node.position.y <= -currentCar.entity.node.frame.height / 2 {
-                    // Remove from scene
-                    currentCar.entity.removeFromTarget()
-                    
-                    // Remove from tracker array, which should mark it for garbage collection
-                    cars.remove(at: i)
-                }
-                
-                // If not, update it!
-                else{
-                    currentCar.entity.update()
-                    
-                    // Make cars respond to velocity changes in real time
-                    currentCar.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -carSpeed)
+                    currentCar.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -speed)
                     
                     i = i + 1
                 }

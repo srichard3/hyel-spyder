@@ -22,7 +22,7 @@ class SpeedKeeper{
             }
 
             // Make currently spawned cars respond instantly to speed changes, always, as long as this isn't frozen
-            Spawner.shared.carSpeed = speed - 30
+            Spawner.shared.speed = speed - 30
 
             // If current score exceeds speedup threshold, increase game speed and score multiplier
             if ScoreKeeper.shared.score >= scoreUntilSpeedup {
@@ -44,7 +44,7 @@ class SpeedKeeper{
             }
                
             // Make spawned cars respond to that change
-            Spawner.shared.carSpeed = 0
+            Spawner.shared.speed = 0
         }
     }
 

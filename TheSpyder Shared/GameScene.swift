@@ -16,12 +16,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     let textures = [
         "background" : SKTexture(imageNamed: "road"),
-        "title" : SKTexture(imageNamed: "title"),
+        "title" : SKTexture(imageNamed: "logo"),
         "game_over" : SKTexture(imageNamed: "game_over"),
         "player" : SKTexture(imageNamed: "player"),
         "spider" : SKTexture(imageNamed: "spider"),
         "shadow" : SKTexture(imageNamed: "shadow"),
-        "horn" : SKTexture(imageNamed: "horn"),
+        "horn" : SKTexture(imageNamed: "honk"),
         "drink" : SKTexture(imageNamed: "drink"),
         "freshener" : SKTexture(imageNamed: "freshener"),
         "car_green" : SKTexture(imageNamed: "car_g"),
@@ -198,7 +198,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             carScale: globalScale * 0.8
         )
     }
- 
+
     func setGameState(to state: GameState){
         // Prevent looping transitions
         if state == gameState {
@@ -254,7 +254,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             Spawner.shared.stop()
         }
     }
-    
+
     func scrollBackground(){
         let dy = SpeedKeeper.shared.speed * deltaTime
                 
@@ -270,7 +270,56 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             backgroundB.position.y = backgroundA.position.y + backgroundA.size.height - dy
         }
     }
-   
+    
+    func runGameLogic(){
+        scrollBackground()
+
+        player.update(with: deltaTime)
+        spider.update(with: deltaTime)
+
+        Spawner.shared.update()
+        SpeedKeeper.shared.update()
+    }
+
+    /// Checks if the passed node is that specific body in a collision contact
+    func isBody(_ target: SKSpriteNode, which body: SKPhysicsBody) -> Bool {
+        if let targetBitMask = target.physicsBody?.categoryBitMask {
+            return body.categoryBitMask == targetBitMask
+        }
+        
+        return false
+    }
+
+    func didBegin(_ contact: SKPhysicsContact) {
+        let bodyA = contact.bodyA
+        let bodyB = contact.bodyB
+        
+        let playerIsBodyA = isBody(player.entity.node, which: bodyA)
+        let playerIsBodyB = isBody(player.entity.node, which: bodyB)
+
+        // If the contact doesn't contain the player, don't process any collision
+        if !playerIsBodyA && !playerIsBodyB {
+            return
+        }
+        
+        // Then, determine which of the 2 bodies is the other body
+        var otherBody: SKPhysicsBody
+
+        if (playerIsBodyA){
+            otherBody = bodyB
+        } else {
+            otherBody = bodyA
+        }
+        
+        // Perform the necessary checks!
+        switch otherBody.categoryBitMask {
+        case Entity.categoryBitmaskOf(.car):
+            print("player hit a car!")
+        default:
+            return
+        }
+    }
+
     @objc func handleTap(_ tap: UITapGestureRecognizer){
         if gameState == .gameOver {
             setGameState(to: .title)
@@ -297,51 +346,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Change player direction
         player.changeDirection(to: gesture.direction)
     }
-
-    func didBegin(_ contact: SKPhysicsContact) {
-        // Flag collision if the player collides with a car or the spider
-        var body1: SKPhysicsBody
-        var body2: SKPhysicsBody
-
-        if contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask {
-            body1 = contact.bodyA
-            body2 = contact.bodyB
-        }
-        
-        else {
-            body1 = contact.bodyB
-            body2 = contact.bodyA
-        }
-
-        let playerIsBody1 = (body1.categoryBitMask & player.entity.node.physicsBody!.categoryBitMask) != 0
-        let spiderIsBody2 = (body2.categoryBitMask & spider.entity.node.physicsBody!.categoryBitMask) != 0
-        
-        // Check collision with spider first
-        if playerIsBody1 && spiderIsBody2 {
-            setGameState(to: .gameOver)
-        }
-
-        
-        // If not, check collision with cars
-        else {
-            for car in Spawner.shared.cars {
-                if contact.bodyA.categoryBitMask > contact.bodyB.categoryBitMask {
-                    body1 = contact.bodyA
-                    body2 = contact.bodyB
-                } else {
-                    body1 = contact.bodyB
-                    body2 = contact.bodyA
-                }
-             
-                let playerIsBody1 = body1.categoryBitMask & player.entity.node.physicsBody!.categoryBitMask != 0
-                let carIsBody2 = body2.categoryBitMask & car.entity.node.physicsBody!.categoryBitMask != 0
-                
-                if playerIsBody1 && carIsBody2 {
-                    setGameState(to: .gameOver)
-                }
-            }
-        }
-    }
     
     override func didMove(to view: SKView) {
         // Configure everything
@@ -354,11 +358,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         configurePlayer(using: view)
         configureSpider()
         configureScoreKeeper()
+        configureSpawner()
         
         // Start at title screen
         setGameState(to: .title)
     }
-    
+   
     override func update(_ currentTime: TimeInterval) {
         // Avoid very large initial deltaTime
         if lastUpdateTime == 0 {
@@ -367,14 +372,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
         deltaTime = currentTime - lastUpdateTime as CGFloat // MARK: This starts tweaking when we've left the app for a long time; set it correctly in some sort of callback?
 
-        scrollBackground()
-
-        player.update(with: deltaTime)
-        spider.update(with: deltaTime)
-
-        Spawner.shared.update()
-        SpeedKeeper.shared.update()
-                
+        runGameLogic()
+        
         lastUpdateTime = currentTime
     }
 }
