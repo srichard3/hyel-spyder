@@ -17,6 +17,7 @@
 				Actions.sks,
 				Assets.xcassets,
 				Components/Car.swift,
+				Components/EffectHandler.swift,
 				Components/Entity.swift,
 				Components/Player.swift,
 				Components/Powerup.swift,

@@ -197,7 +197,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             carScale: globalScale * 0.8
         )
     }
-
+    
     func setGameState(to state: GameState){
         // Prevent looping transitions
         if state == gameState {
@@ -309,17 +309,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         } else {
             otherBody = bodyA
         }
-        
-        // Perform the necessary checks!
+       
+        // Run the actions pertaining to that object's type!
         switch otherBody.categoryBitMask {
         case Entity.categoryBitmaskOf(.car):
-            print("hit car")
+            setGameState(to: .gameOver)
         case Entity.categoryBitmaskOf(.freshener):
-            print("hit freshener")
+            EffectHandler.shared.runEffect(for: .freshener)
         case Entity.categoryBitmaskOf(.horn):
-            print("hit horn")
+            EffectHandler.shared.runEffect(for: .horn)
         case Entity.categoryBitmaskOf(.drink):
-            print("hit drink")
+            EffectHandler.shared.runEffect(for: .drink)
         default:
             return
         }

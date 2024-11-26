@@ -13,7 +13,7 @@ class Spawner{
         .car : 90,
         .horn : 2,
         .drink : 5,
-        .freshener : 3
+        .freshener : 5
     ]
 
     var cars = Array<Car>()
