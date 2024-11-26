@@ -1,3 +1,5 @@
+-- BRAINSTORMING --
+
 Power-ups:
     RNG:
         - Keep probability table, 1-100
@@ -21,7 +23,12 @@ Checking ranges:
     - From this initial table, generate new table, where each item will exist w times
     - And now just choose a random item from the table!
 
-Fixes/reworks:
-    - Parameterize scene instead of making it a member for spawner (and wherever else is found)
-    - Indexing textures requires unwrapping, make it so it doesn't?
-    - Stuff keeps spawning after closing the app (in general, everything blows up when we close the app...)
+-- FIXES --
+
+May fix:
+    - [x] Parameterize scene instead of making it a member for spawner (and wherever else is found)
+    - [ ] Indexing textures requires unwrapping, make it so it doesn't?
+
+Will fix:
+    - [ ] Stuff keeps spawning after closing the app (in general, everything blows up when we close the app...)
+    - [ ] Onscreen powerups keep moving after gameover, and possibly aren't cleared
