@@ -13,20 +13,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     var lastUpdateTime: TimeInterval = 0
     var deltaTime: CGFloat = 0
-    
-    let tBackground = SKTexture(imageNamed: "road")
-    let tTitle = SKTexture(imageNamed: "logo")
-    let tGameOver = SKTexture(imageNamed: "game_over")
-    let tPlayer = SKTexture(imageNamed: "player")
-    let tSpider = SKTexture(imageNamed: "spider")
-    let tShadow = SKTexture(imageNamed: "shadow")
-    let tCars = [
-        SKTexture(imageNamed: "car_g"),
-        SKTexture(imageNamed: "car_o"),
-        SKTexture(imageNamed: "car_r"),
-        SKTexture(imageNamed: "car_y")
-    ]
 
+    let textures = [
+        "background" : SKTexture(imageNamed: "road"),
+        "title" : SKTexture(imageNamed: "title"),
+        "game_over" : SKTexture(imageNamed: "game_over"),
+        "player" : SKTexture(imageNamed: "player"),
+        "spider" : SKTexture(imageNamed: "spider"),
+        "shadow" : SKTexture(imageNamed: "shadow"),
+        "horn" : SKTexture(imageNamed: "horn"),
+        "drink" : SKTexture(imageNamed: "drink"),
+        "freshener" : SKTexture(imageNamed: "freshener"),
+        "car_green" : SKTexture(imageNamed: "car_g"),
+        "car_orange" : SKTexture(imageNamed: "car_o"),
+        "car_red" : SKTexture(imageNamed: "car_r"),
+        "car_yellow" : SKTexture(imageNamed: "car_y")
+    ]
+   
     var backgroundA: SKSpriteNode!
     var backgroundB: SKSpriteNode!
 
@@ -38,21 +41,25 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
    
     var swipeLeft: UISwipeGestureRecognizer!
     var swipeRight: UISwipeGestureRecognizer!
+    var tap: UITapGestureRecognizer!
     
     let hapticFeedback = UIImpactFeedbackGenerator(style: .light)
-    
-    override func didMove(to view: SKView) {
+   
+    func setGlobalScale(from view: SKView){
         // The global scale is based on how much we need to scale the background by to cover the whole scene's frame
-        let xScaleFactor = view.frame.width / tBackground.size().width
-        let yScaleFactor = view.frame.height / tBackground.size().height
+        let xScaleFactor = view.frame.width / textures["background"]!.size().width
+        let yScaleFactor = view.frame.height / textures["background"]!.size().height
         
         globalScale = max(xScaleFactor, yScaleFactor)
+    }
    
-        // Set up the scene and its components
-        self.physicsWorld.contactDelegate = self                // Make contact tests take place in this scene
-        self.physicsWorld.gravity = CGVector(dx: 0, dy: 0)      // Remove gravity
-           
-        // Set up swipe recognizers and add them to the scene
+    func configurePhysics(){
+        self.physicsWorld.contactDelegate = self // Make contact tests take place in this scene
+        self.physicsWorld.gravity = CGVector(dx: 0, dy: 0) // Remove gravity
+    }
+    
+    func configureGestureRecognizers(using view: SKView){
+        // Set up swipe and tap recognizers and add them to the scene
         swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:))) // The _: effectively makes it so the recognizer passes itself into HandleSwipe
         swipeLeft.direction = .left
        
@@ -63,20 +70,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
        
         view.addGestureRecognizer(swipeRight)
 
+        tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+
+        view.addGestureRecognizer(tap)
+    }
+   
+    func configureTextures(){
         // Make all textures resize as nearest neighbor
-        tBackground.filteringMode = .nearest
-        tTitle.filteringMode = .nearest
-        tGameOver.filteringMode = .nearest
-        tPlayer.filteringMode = .nearest
-        tSpider.filteringMode = .nearest
-        tShadow.filteringMode = .nearest
-        
-        for texture in tCars {
+        for texture in textures.values {
             texture.filteringMode = .nearest
         }
-       
-        // Setup title
-        titleCard = SKSpriteNode(texture: tTitle)
+    }
+   
+    func configureGUIElements(using view: SKView){
+        // Setup title card
+        titleCard = SKSpriteNode(texture: textures["title"]!)
         
         titleCard.setScale(globalScale * 0.20)
         titleCard.zPosition = CGFloat(GameObjectType.gui.rawValue)
@@ -88,7 +96,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(titleCard)
         
         // Setup game over card
-        gameOverCard = SKSpriteNode(texture: tGameOver)
+        gameOverCard = SKSpriteNode(texture: textures["game_over"]!)
         
         gameOverCard.setScale(globalScale * 0.2)
         gameOverCard.zPosition = CGFloat(GameObjectType.gui.rawValue)
@@ -98,9 +106,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         )
         
         addChild(gameOverCard)
-        
+    }
+   
+    func configureBackgrounds(using view: SKView){
         // Setup background A
-        backgroundA = SKSpriteNode(texture: tBackground)
+        backgroundA = SKSpriteNode(texture: textures["background"])
 
         backgroundA.setScale(globalScale)
         backgroundA.zPosition = CGFloat(GameObjectType.background.rawValue)
@@ -117,19 +127,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         backgroundB.position.y = backgroundA.position.y + backgroundA.size.height
        
         addChild(backgroundB)
-       
-        // Setup player
+    }
+   
+    func configurePlayer(using view: SKView){
         player = Player(
             scale: globalScale * 0.8,
-            texture: tPlayer,
-            shadow: tShadow,
+            texture: textures["player"]!,
+            shadow: textures["shadow"]!,
             target: self,
             startPos: CGPoint(
                 x: view.frame.width / 2,
-                y: (tPlayer.size().height * 0.8 * globalScale / 2) + (30 * globalScale) // MARK: This calculation is being done by hand, using magic numbers that pertain to things that should be variables...
+                y: (textures["player"]!.size().height * 0.8 * globalScale / 2) + (30 * globalScale) // MARK: This calculation is being done by hand, using magic numbers that pertain to things that should be variables...
             )
         )
-        
+       
+        // Assign the player lanes
         player.calculateLanes(
             scale: globalScale,
             offshoot: (backgroundA.frame.width - view.frame.width) * 0.5, // MARK: Everything should be in unscaled pixel coordinates; is this?
@@ -137,59 +149,56 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             laneWidth: 22,
             laneCount: 3
         )
-
+    }
+    
+    func configureSpider(){
         // Setup spider
         spider = Spider(
             scale: globalScale,
-            texture: tSpider,
+            texture: textures["spider"]!,
             shadow: nil,
-            target: self,
-            startPos: CGPoint(
-                x: frame.midX,
-                y: -tSpider.size().height * globalScale
-            )
+            target: self
         )
-        
-        // Setup score keeper
-        ScoreKeeper.shared.addLabelToScene(self)
        
-        // Setup car spawner
-        CarSpawner.shared.configure(
+        // Give attack targets; player must be initialized first
+        if !player.lanes.isEmpty{
+            spider.possibleAttackTargets = player.lanes
+        }
+    }
+   
+    func configureScoreKeeper(){
+        // Add label to scene
+        ScoreKeeper.shared.addLabelToScene(self)
+    }
+   
+    func configureSpawner(){
+        // Organize powerup and car textures for spawner to draw from
+        let powerupTextures: Dictionary<String, SKTexture> = [
+            "drink" : textures["drink"]!,
+            "freshener" : textures["freshener"]!,
+            "horn" : textures["horn"]!
+        ]
+      
+        let carTextures = [
+            textures["car_green"]!,
+            textures["car_orange"]!,
+            textures["car_red"]!,
+            textures["car_yellow"]!,
+        ]
+        
+
+        // Setup spawner
+        Spawner.shared.configure(
             targetScene: self,
-            possibleCars: tCars,
+            possibleCars: carTextures,
             possibleLanes: player.lanes,
-            carShadow: tShadow,
+            powerupTextures: powerupTextures,
+            carShadow: textures["shadow"]!,
             carSpeed: SpeedKeeper.shared.speed - 30,
             carScale: globalScale * 0.8
         )
-        
-        // Set game state to title screen
-        setGameState(to: .title)
     }
-
-    func didBegin(_ contact: SKPhysicsContact) {
-        // Flag collision if the player collides with a car
-        var body1: SKPhysicsBody
-        var body2: SKPhysicsBody
-
-        for car in CarSpawner.shared.cars {
-            if contact.bodyA.categoryBitMask > contact.bodyB.categoryBitMask {
-                body1 = contact.bodyA
-                body2 = contact.bodyB
-            } else {
-                body1 = contact.bodyB
-                body2 = contact.bodyA
-            }
-           
-            let playerIsBody1 = body1.categoryBitMask & player.entity.node.physicsBody!.categoryBitMask != 0
-            let carIsBody2 = body2.categoryBitMask & car.entity.node.physicsBody!.categoryBitMask != 0
-            
-            if (playerIsBody1 && carIsBody2){
-                setGameState(to: .gameOver)
-            }
-        }
-    }
-  
+ 
     func setGameState(to state: GameState){
         // Prevent looping transitions
         if state == gameState {
@@ -197,58 +206,55 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         gameState = state
+    
+        // MARK: The actions taken in each case have been shoddily put there after testing and seeing what fails, and assuming the only flow is title -> inGame -> gameOver -> title -> ...
+        // TODO: Ensure transition actions are robust!
         
         switch state {
         case .title:
             gameOverCard.isHidden = true
             titleCard.isHidden = false
-            
-            // No cars spawning
-            CarSpawner.shared.stop()
-            
-            // Reset speedkeeper
-            // SpeedKeeper.shared.stop()
-            
-            // Reset score and hide label
+
+            player.recenter()
+            player.isFrozen = false // TODO: Make player use similar freezing protocol to spider
+
+            spider.stop()
+            spider.moveOffscreen()
+            spider.setFrozen(to: false)
+
+            Spawner.shared.stop()
+            Spawner.shared.clear()
+
+            ScoreKeeper.shared.reset()
             ScoreKeeper.shared.label.isHidden = true
+
+            SpeedKeeper.shared.reset()
+            SpeedKeeper.shared.isFrozen = false
         case .inGame:
             gameOverCard.isHidden = true
             titleCard.isHidden = true
-           
-            // Begin spawning cars
-            CarSpawner.shared.start()
 
-            // Begin keeping score
+            spider.start()
+            
+            Spawner.shared.start()
+            
             ScoreKeeper.shared.start()
-
-            // Unhide score label
             ScoreKeeper.shared.label.isHidden = false
         case.gameOver:
             gameOverCard.isHidden = false
             titleCard.isHidden = true
+       
+            player.isFrozen = true
+            spider.setFrozen(to: true)
+            
+            SpeedKeeper.shared.isFrozen = true
+
             ScoreKeeper.shared.label.isHidden = true
             
-            // Freeze game speed
-            SpeedKeeper.shared.freeze()
-            
-            // Stop spawning cars
-            CarSpawner.shared.stop()
+            Spawner.shared.stop()
         }
     }
     
-    @objc func handleSwipe(_ gesture: UISwipeGestureRecognizer){
-        // Play haptic feedback
-        hapticFeedback.impactOccurred()
-       
-        // If is in title screen, begin game!
-        if gameState == .title {
-            setGameState(to: .inGame)
-        }
-        
-        // Change player direction
-        player.changeDirection(to: gesture.direction)
-    }
-   
     func scrollBackground(){
         let dy = SpeedKeeper.shared.speed * deltaTime
                 
@@ -264,6 +270,94 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             backgroundB.position.y = backgroundA.position.y + backgroundA.size.height - dy
         }
     }
+   
+    @objc func handleTap(_ tap: UITapGestureRecognizer){
+        if gameState == .gameOver {
+            setGameState(to: .title)
+        }
+    }
+ 
+    @objc func handleSwipe(_ gesture: UISwipeGestureRecognizer){
+        // Play haptic feedback
+        hapticFeedback.impactOccurred()
+
+        // Play swipe sound
+        self.run(SKAction.playSoundFileNamed("hide", waitForCompletion: false))
+        
+        // No actions save for a tap to reset should be taken in game over
+        if gameState == .gameOver {
+            return
+        }
+        
+        // If is in title screen, begin game!
+        if gameState == .title {
+            setGameState(to: .inGame)
+        }
+       
+        // Change player direction
+        player.changeDirection(to: gesture.direction)
+    }
+
+    func didBegin(_ contact: SKPhysicsContact) {
+        // Flag collision if the player collides with a car or the spider
+        var body1: SKPhysicsBody
+        var body2: SKPhysicsBody
+
+        if contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask {
+            body1 = contact.bodyA
+            body2 = contact.bodyB
+        }
+        
+        else {
+            body1 = contact.bodyB
+            body2 = contact.bodyA
+        }
+
+        let playerIsBody1 = (body1.categoryBitMask & player.entity.node.physicsBody!.categoryBitMask) != 0
+        let spiderIsBody2 = (body2.categoryBitMask & spider.entity.node.physicsBody!.categoryBitMask) != 0
+        
+        // Check collision with spider first
+        if playerIsBody1 && spiderIsBody2 {
+            setGameState(to: .gameOver)
+        }
+
+        
+        // If not, check collision with cars
+        else {
+            for car in Spawner.shared.cars {
+                if contact.bodyA.categoryBitMask > contact.bodyB.categoryBitMask {
+                    body1 = contact.bodyA
+                    body2 = contact.bodyB
+                } else {
+                    body1 = contact.bodyB
+                    body2 = contact.bodyA
+                }
+             
+                let playerIsBody1 = body1.categoryBitMask & player.entity.node.physicsBody!.categoryBitMask != 0
+                let carIsBody2 = body2.categoryBitMask & car.entity.node.physicsBody!.categoryBitMask != 0
+                
+                if playerIsBody1 && carIsBody2 {
+                    setGameState(to: .gameOver)
+                }
+            }
+        }
+    }
+    
+    override func didMove(to view: SKView) {
+        // Configure everything
+        setGlobalScale(from: view)
+        configurePhysics()
+        configureGestureRecognizers(using: view)
+        configureTextures()
+        configureGUIElements(using: view)
+        configureBackgrounds(using: view)
+        configurePlayer(using: view)
+        configureSpider()
+        configureScoreKeeper()
+        
+        // Start at title screen
+        setGameState(to: .title)
+    }
     
     override func update(_ currentTime: TimeInterval) {
         // Avoid very large initial deltaTime
@@ -273,16 +367,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
         deltaTime = currentTime - lastUpdateTime as CGFloat // MARK: This starts tweaking when we've left the app for a long time; set it correctly in some sort of callback?
 
-        // Run game functionality here
-        // MARK: Functionality assignment is borked; need to cleanly establish what triggers what, and so on... But it works for now!
-        
         scrollBackground()
-        CarSpawner.shared.updateCars()
-        
-        if gameState == .inGame {
-            player.update(with: deltaTime)
-            SpeedKeeper.shared.update()
-        }
+
+        player.update(with: deltaTime)
+        spider.update(with: deltaTime)
+
+        Spawner.shared.update()
+        SpeedKeeper.shared.update()
                 
         lastUpdateTime = currentTime
     }

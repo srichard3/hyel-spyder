@@ -17,20 +17,20 @@
 				Actions.sks,
 				Assets.xcassets,
 				Components/Car.swift,
-				Components/CarSpawner.swift,
 				Components/Entity.swift,
 				Components/Player.swift,
+				Components/Powerup.swift,
 				Components/ScoreKeeper.swift,
+				Components/Spawner.swift,
 				Components/SpeedKeeper.swift,
 				Components/Spider.swift,
 				font.ttf,
 				GameScene.sks,
 				GameScene.swift,
-				Sounds/attack.wav,
-				Sounds/crash.wav,
-				Sounds/hide.wav,
-				Sounds/peek.wav,
-				Sounds/switch.wav,
+				Sounds/attack.mp3,
+				Sounds/crash.mp3,
+				Sounds/hide.mp3,
+				Sounds/peek.mp3,
 			);
 			target = 053C70622CCE68FE0093D173 /* TheSpyder iOS */;
 		};
@@ -113,7 +113,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 1610;
 				TargetAttributes = {
 					053C70622CCE68FE0093D173 = {
 						CreatedOnToolsVersion = 16.0;
@@ -261,6 +261,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -322,6 +323,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
