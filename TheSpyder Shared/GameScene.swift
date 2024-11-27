@@ -153,13 +153,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func configureSpider(){
         // Setup spider
-        spider = Spider(
+        Spider.shared.configure(
             scale: globalScale,
             texture: textures["spider"]!,
-            shadow: nil,
-            target: self
+            targetScene: self
         )
-       
+      
         // Give attack targets; player must be initialized first
         if !player.lanes.isEmpty{
             spider.possibleAttackTargets = player.lanes
@@ -235,7 +234,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
             spider.start()
             
-            Spawner.shared.start(within: self)
+            Spawner.shared.start()
             
             ScoreKeeper.shared.start()
             ScoreKeeper.shared.label.isHidden = false

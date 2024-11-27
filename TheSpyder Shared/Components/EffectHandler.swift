@@ -40,8 +40,12 @@ class EffectHandler {
         switch type {
         case .horn:
             print("blanking!")
+            Spawner.shared.stop()
+            Spawner.shared.clear()
         case.freshener:
             print("swatting spider!")
+            Spider.shared.stop()
+            Spider.shared.moveOffscreen()
         case .drink:
             print("slowing down!")
         default:
@@ -54,8 +58,10 @@ class EffectHandler {
         switch type {
         case .horn:
             print("resuming spawns!")
+            Spawner.shared.start()
         case.freshener:
             print("spider active again!")
+            Spider.shared.start()
         case .drink:
             print("restoring speed!")
         default:

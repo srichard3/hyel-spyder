@@ -1,8 +1,10 @@
 import SpriteKit
 
-class Spider{
-    var entity: Entity
-    var attackTimer: Timer!
+class Spider {
+    static let shared = Spider()
+    
+    var entity: Entity?
+    var attackTimer: Timer?
     
     let attackInterval: TimeInterval = 5
     let peekDuration: TimeInterval = 3.0
@@ -11,16 +13,23 @@ class Spider{
     var possibleAttackTargets = Array<CGPoint>()
 
     let smoothTime = 7.5
-    var targetPos: CGPoint
+    var targetPos: CGPoint?
    
     var isFrozen = false
     
-    init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene){
+    public func configure(scale: CGFloat, texture: SKTexture, targetScene: SKScene){
         // Start spider offscreen
         let startPos = CGPoint(x: 0, y: -texture.size().height * scale)
         
-        // Set up entity
-        self.entity = Entity(scale: scale, texture: texture, shadow: shadow, target: target, type: GameObjectType.spider, startPos: startPos)
+        // Set up its entity
+        self.entity = Entity(
+            scale: scale,
+            texture: texture,
+            shadow: nil,
+            target: targetScene,
+            type: GameObjectType.spider,
+            startPos: startPos
+        )
        
         // Set lerp position to default
         self.targetPos = startPos
@@ -31,14 +40,22 @@ class Spider{
         if possibleAttackTargets.isEmpty {
             return
         }
+       
+        if self.targetPos == nil {
+            return
+        }
+        
+        if self.entity == nil {
+            return
+        }
       
         // Pick random attack target
         let attackTarget = possibleAttackTargets[Int.random(in: 0..<possibleAttackTargets.count)]
         
         // Move to peek
         let moveToPeek = SKAction.run {
-            self.targetPos.x = attackTarget.x
-            self.targetPos.y = 0
+            self.targetPos!.x = attackTarget.x
+            self.targetPos!.y = 0
         }
         
         // Stay peeked for a bit
@@ -46,8 +63,8 @@ class Spider{
         
         // Then snatch!
         let snatch = SKAction.run {
-            self.targetPos.x = attackTarget.x
-            self.targetPos.y = attackTarget.y
+            self.targetPos!.x = attackTarget.x
+            self.targetPos!.y = attackTarget.y
         }
         
         // Stay in snatching position for a bit
@@ -55,8 +72,8 @@ class Spider{
         
         // Move back down
         let moveBackDown = SKAction.run {
-            self.targetPos.x = self.entity.node.parent == nil ? 0 : self.entity.node.parent!.frame.midX
-            self.targetPos.y = -self.entity.node.frame.height
+            self.targetPos!.x = self.entity!.node.parent == nil ? 0 : self.entity!.node.parent!.frame.midX
+            self.targetPos!.y = -self.entity!.node.frame.height
         }
    
         // Start the timer again
@@ -77,12 +94,15 @@ class Spider{
             restartTimer
         ]
         
-        self.entity.node.run(SKAction.sequence(sequence))
+        self.entity!.node.run(SKAction.sequence(sequence))
     }
-       
+      
+    /// Make the spider move towards its target position using lerp
     private func lerpMove(with deltaTime: CGFloat){
-        entity.node.position.x = lerp(entity.node.position.x, targetPos.x, smoothTime * deltaTime)
-        entity.node.position.y = lerp(entity.node.position.y, targetPos.y, smoothTime * deltaTime)
+        if let entity = self.entity, let targetPos = self.targetPos {
+            entity.node.position.x = lerp(entity.node.position.x, targetPos.x, smoothTime * deltaTime)
+            entity.node.position.y = lerp(entity.node.position.y, targetPos.y, smoothTime * deltaTime)
+        }
     }
 
     public func start(){
@@ -91,13 +111,15 @@ class Spider{
     }
   
     public func stop(){
-        // Remove any queued events
-        self.entity.node.removeAllActions()
-        
-        // Stop the timer
-        if self.attackTimer != nil {
-            self.attackTimer.invalidate()
-            self.attackTimer = nil
+        if let entity = self.entity {
+            // Remove any queued events
+            entity.node.removeAllActions()
+           
+            // Stop the timer
+            if self.attackTimer != nil {
+                self.attackTimer!.invalidate()
+                self.attackTimer = nil
+            }
         }
     }
     
@@ -107,33 +129,43 @@ class Spider{
             return
         }
 
-        isFrozen = status
-        
-        if isFrozen == true {
-            // Pause any running actions
-            self.entity.node.isPaused = true
-        }
-       
-        else {
-            // Unpause running actions
-            self.entity.node.isPaused = false
+        // Set frozen state
+        if let entity = self.entity {
+            isFrozen = status
+            if isFrozen == true {
+                // Pause any running actions
+                entity.node.isPaused = true
+            } else {
+                // Unpause running actions
+                entity.node.isPaused = false
+            }
         }
     }
     
     public func moveOffscreen(){
-        // Teleport spider offscreen
-        self.targetPos.x = self.entity.node.parent == nil ? 0 : self.entity.node.parent!.frame.midX
-        self.targetPos.y = -self.entity.node.frame.height
-        
-        self.entity.node.position.x = self.targetPos.x
-        self.entity.node.position.y = self.targetPos.y
+        if self.targetPos == nil {
+            return
+        }
+       
+        if self.entity == nil {
+            return
+        }
+       
+        // Teleport spider offscreen by immediately setting both real pos (node pos) and target pos
+        self.targetPos!.x = self.entity!.node.parent == nil ? 0 : self.entity!.node.parent!.frame.midX
+        self.targetPos!.y = -self.entity!.node.frame.height
+
+        self.entity!.node.position.x = self.targetPos!.x
+        self.entity!.node.position.y = self.targetPos!.y
     }
     
     public func update(with deltaTime: CGFloat){
         if !isFrozen {
             lerpMove(with: deltaTime)
         }
-        
-        entity.update()
+       
+        if let entity = self.entity {
+            entity.update()
+        }
     }
 }

@@ -17,11 +17,31 @@ Power-ups:
             1. On collide, check type 
             2. Depending on type, run a series of setter callbacks bound to a timer
             3. Use a finish block to unset what the callbacks did after the timer expires
+    Horn:
+        - Flash the screen white to make everything disappear
+        - Stop all spawns and the spider 
+    Freshener:
+        - Show that the spider is restrained somehow; add a jail cell around it?
+        - Spider must be a shared instance for this!
+    Drink:
+        - Everything slows down; use screen overlay to convey this
+        - Slowdown amt. decreases overtime, everything gets faster in the meantime
+        - As everything speeds up, overlay opacity decreases 
+
+    As a bonus note, consider changing powerup sprites/concepts to make them a little more transparent, even if it sacrifices style
             
 Checking ranges:
     - Keep a table of items mapped to a weight w
     - From this initial table, generate new table, where each item will exist w times
     - And now just choose a random item from the table!
+
+Meeting notes:
+    - Convey to user
+    - Screen effects
+    - Particles, later
+    - Change assets
+    - Instructions page, maybe
+    - Dec. 20 launch
 
 -- FIXES --
 
