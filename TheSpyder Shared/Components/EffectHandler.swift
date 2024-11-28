@@ -5,9 +5,46 @@ class EffectHandler {
 
     let slowdownDuration = 5.0
     let spawnBlockDuration = 1.0
+
+    var overlaySprite: SKSpriteNode?
     
     var timer: Timer?
 
+    public func configure(overlay: SKTexture, targetScene: SKScene){
+        self.overlaySprite = SKSpriteNode(texture: overlay)
+        
+        if let overlaySprite = self.overlaySprite, let view = targetScene.view {
+            // Add node to scene
+            targetScene.addChild(overlaySprite)
+            
+            // Make the overlay sprite cover the entire screen
+            overlaySprite.size.width = view.frame.width
+            overlaySprite.size.height = view.frame.height
+            
+            overlaySprite.position.x = view.frame.midX
+            overlaySprite.position.y = view.frame.midY
+            
+            // It should also be on top of everything
+            overlaySprite.zPosition = 999
+            
+            // Make it "hidden" by default; control this with opacity for consistency
+            overlaySprite.alpha = 0
+        }
+    }
+   
+    /// Start overlay with fadeout
+    func showOverlay(duration: CGFloat, color: CGColor){
+        if let overlaySprite = self.overlaySprite {
+            // Turn the overlay on
+            overlaySprite.alpha = 1
+           
+            // Fade it out over the duration
+            let fadeOut = SKAction.fadeAlpha(to: 0, duration: duration)
+            
+            overlaySprite.run(fadeOut)
+        }
+    }
+    
     /// Begins run of a specified effect
     func runEffect(for type: GameObjectType){
         // This is the duration that our run of the next effect will have
@@ -40,8 +77,13 @@ class EffectHandler {
         switch type {
         case .horn:
             print("blanking!")
+            showOverlay(duration: 0.5, color: CGColor(gray: 1, alpha: 1))
+            
             Spawner.shared.stop()
             Spawner.shared.clear()
+
+            Spider.shared.stop()
+            Spider.shared.moveOffscreen()
         case.freshener:
             print("swatting spider!")
             Spider.shared.stop()

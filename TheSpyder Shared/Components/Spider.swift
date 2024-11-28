@@ -21,7 +21,7 @@ class Spider {
         // Start spider offscreen
         let startPos = CGPoint(x: 0, y: -texture.size().height * scale)
         
-        // Set up its entity
+        // Set up entity
         self.entity = Entity(
             scale: scale,
             texture: texture,

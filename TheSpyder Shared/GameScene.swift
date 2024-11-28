@@ -15,6 +15,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var deltaTime: CGFloat = 0
 
     let textures = [
+        "blank" : SKTexture(imageNamed: "blank"),
         "background" : SKTexture(imageNamed: "road"),
         "title" : SKTexture(imageNamed: "logo"),
         "game_over" : SKTexture(imageNamed: "game_over"),
@@ -37,7 +38,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var gameOverCard: SKSpriteNode!
     
     var player: Player!
-    var spider: Spider!
    
     var swipeLeft: UISwipeGestureRecognizer!
     var swipeRight: UISwipeGestureRecognizer!
@@ -161,7 +161,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
       
         // Give attack targets; player must be initialized first
         if !player.lanes.isEmpty{
-            spider.possibleAttackTargets = player.lanes
+            Spider.shared.possibleAttackTargets = player.lanes
         }
     }
    
@@ -196,6 +196,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             carScale: globalScale * 0.8
         )
     }
+   
+    func configureEffectHandler(using scene: SKScene){
+        // Configure the screen overlay
+        EffectHandler.shared.configure(
+            overlay: textures["blank"]!,
+            targetScene: scene
+        )
+    }
     
     func setGameState(to state: GameState){
         // Prevent looping transitions
@@ -216,9 +224,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.recenter()
             player.isFrozen = false // TODO: Make player use similar freezing protocol to spider
 
-            spider.stop()
-            spider.moveOffscreen()
-            spider.setFrozen(to: false)
+            Spider.shared.stop()
+            Spider.shared.moveOffscreen()
+            Spider.shared.setFrozen(to: false)
 
             Spawner.shared.stop()
             Spawner.shared.clear()
@@ -232,7 +240,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             gameOverCard.isHidden = true
             titleCard.isHidden = true
 
-            spider.start()
+            Spider.shared.start()
             
             Spawner.shared.start()
             
@@ -243,7 +251,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             titleCard.isHidden = true
        
             player.isFrozen = true
-            spider.setFrozen(to: true)
+            Spider.shared.setFrozen(to: true)
             
             SpeedKeeper.shared.isFrozen = true
 
@@ -273,7 +281,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scrollBackground()
 
         player.update(with: deltaTime)
-        spider.update(with: deltaTime)
+        Spider.shared.update(with: deltaTime)
 
         Spawner.shared.update()
         SpeedKeeper.shared.update()
@@ -363,6 +371,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         configureSpider()
         configureScoreKeeper()
         configureSpawner()
+        configureEffectHandler(using: self)
         
         // Start at title screen
         setGameState(to: .title)

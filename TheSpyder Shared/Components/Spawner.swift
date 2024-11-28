@@ -12,10 +12,10 @@ class Spawner{
   
     var spawnChoiceTable = Array<GameObjectType>()
     var spawnWeights: Dictionary<GameObjectType, Int> = [
-        .car : 90,
-        .horn : 2,
+        .car : 100,
+        .horn : 100,
         .drink : 5,
-        .freshener : 5000
+        .freshener : 0
     ]
 
     var cars = Array<Car>()
@@ -81,7 +81,6 @@ class Spawner{
                 let newPowerup = Powerup(
                     scale: self.carScale,
                     texture: chosenPowerupTexture!,
-                    shadow: carShadowTexture,
                     target: scene,
                     type: randomItem,
                     startPos: CGPoint(x: chosenLane.x, y: scene.frame.height + chosenPowerupTexture!.size().height * carScale),
@@ -152,7 +151,7 @@ class Spawner{
         // Same update pattern here
         if !powerups.isEmpty {
             var i = 0
-            while i < cars.count {
+            while i < powerups.count {
                 let currentPowerup = powerups[i]
                 if currentPowerup.entity.node.position.y <= -currentPowerup.entity.node.frame.height / 2 {
                     currentPowerup.entity.removeFromTarget()

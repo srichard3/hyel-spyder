@@ -52,3 +52,10 @@ May fix:
 Will fix:
     - [ ] Stuff keeps spawning after closing the app (in general, everything blows up when we close the app...)
     - [ ] Onscreen powerups keep moving after gameover, and possibly aren't cleared
+    - [ ] Something seems to be up with speed resetting, fix!
+
+-- TODOS --
+
+- [x] Blanks
+- [ ] Spider-swatter
+- [ ] Slowdown
