@@ -31,20 +31,43 @@ class EffectHandler {
             overlaySprite.alpha = 0
         }
     }
-   
-    /// Start overlay with fadeout
-    func showOverlay(duration: CGFloat, color: CGColor){
+  
+    /// Fade the overlay in
+    func fadeInOverlay(transitionDuration: CGFloat, color: CGColor){
         if let overlaySprite = self.overlaySprite {
-            // Turn the overlay on
+            // Ensure overlay is off
+            overlaySprite.alpha = 0
+            
+            // Run fade-in transition
+            let fadeIn = SKAction.fadeAlpha(to: 1, duration: transitionDuration)
+            overlaySprite.run(fadeIn)
+        }
+    }
+ 
+    /// Fade the overlay out
+    func fadeOutOverlay(transtionDuration: CGFloat){
+        if let overlaySprite = self.overlaySprite {
+            // Ensure overlay is on
             overlaySprite.alpha = 1
            
-            // Fade it out over the duration
-            let fadeOut = SKAction.fadeAlpha(to: 0, duration: duration)
-            
+            // Run fade-out transition
+            let fadeOut = SKAction.fadeAlpha(to: 0, duration: transtionDuration)
             overlaySprite.run(fadeOut)
         }
     }
     
+    /// Immediately turn on the overlay and fade it out over the given duration
+    func flashOverlay(duration: CGFloat, color: CGColor){
+        if let overlaySprite = self.overlaySprite {
+            // Turn the overlay on
+            overlaySprite.alpha = 1
+
+            // Run fade-out transition
+            let fadeOut = SKAction.fadeAlpha(to: 0, duration: duration)
+            overlaySprite.run(fadeOut)
+        }
+    }
+
     /// Begins run of a specified effect
     func runEffect(for type: GameObjectType){
         // This is the duration that our run of the next effect will have
@@ -63,7 +86,7 @@ class EffectHandler {
         }
        
         // Apply powerup effect
-        setEffect(for: type)
+        setEffect(for: type, duration: selectedDuration)
        
         // Run the timer, unsetting the effect at completion
         timer = Timer.scheduledTimer(withTimeInterval: selectedDuration, repeats: false) { timer in
@@ -73,23 +96,31 @@ class EffectHandler {
     }
    
     /// Apply the powerup's effect
-    func setEffect(for type: GameObjectType){
+    func setEffect(for type: GameObjectType, duration: CGFloat){
         switch type {
         case .horn:
             print("blanking!")
-            showOverlay(duration: 0.5, color: CGColor(gray: 1, alpha: 1))
-            
+            // Flash white
+            flashOverlay(duration: duration, color: CGColor(gray: 1, alpha: 1))
+           
+            // Stop spawning stuff for a bit
             Spawner.shared.stop()
             Spawner.shared.clear()
 
+            // Swat the spider
             Spider.shared.stop()
             Spider.shared.moveOffscreen()
         case.freshener:
             print("swatting spider!")
+            
+            // Swat the spider
             Spider.shared.stop()
             Spider.shared.moveOffscreen()
         case .drink:
             print("slowing down!")
+           
+            // Start blue overlay
+            fadeInOverlay(transitionDuration: 0.5, color: CGColor(red: 0, green: 0, blue: 1, alpha: 0.5))
         default:
             print("no effect")
         }
