@@ -57,7 +57,7 @@ class Spawner{
     }
     
     public func resetSpawnInterval(){
-        self.spawnInterval = 0.3
+        self.spawnInterval = 0.75
     }
     
     /// Spawns either a car or power-up on a random lane
