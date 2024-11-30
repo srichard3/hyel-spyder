@@ -16,6 +16,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     let textures = [
         "blank" : SKTexture(imageNamed: "blank"),
+        "cage" : SKTexture(imageNamed: "cage"),
         "background" : SKTexture(imageNamed: "road"),
         "title" : SKTexture(imageNamed: "logo"),
         "game_over" : SKTexture(imageNamed: "game_over"),
@@ -156,6 +157,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         Spider.shared.configure(
             scale: globalScale,
             texture: textures["spider"]!,
+            cageTexture: textures["cage"]!,
             targetScene: self
         )
       
@@ -192,7 +194,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             possibleLanes: player.lanes,
             powerupTextures: powerupTextures,
             carShadow: textures["shadow"]!,
-            carSpeed: SpeedKeeper.shared.speed - 30,
             carScale: globalScale * 0.8
         )
     }
@@ -226,7 +227,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
             Spider.shared.stop()
             Spider.shared.moveOffscreen()
-            Spider.shared.setFrozen(to: false)
+            Spider.shared.unfreeze()
 
             Spawner.shared.stop()
             Spawner.shared.clear()
@@ -235,7 +236,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             ScoreKeeper.shared.label.isHidden = true
 
             SpeedKeeper.shared.reset()
-            SpeedKeeper.shared.isFrozen = false
+            SpeedKeeper.shared.unfreeze()
         case .inGame:
             gameOverCard.isHidden = true
             titleCard.isHidden = true
@@ -251,9 +252,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             titleCard.isHidden = true
        
             player.isFrozen = true
-            Spider.shared.setFrozen(to: true)
+            Spider.shared.freeze()
             
-            SpeedKeeper.shared.isFrozen = true
+            SpeedKeeper.shared.freeze()
 
             ScoreKeeper.shared.label.isHidden = true
             
@@ -262,7 +263,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     func scrollBackground(){
-        let dy = SpeedKeeper.shared.speed * deltaTime
+        let dy = CGFloat(SpeedKeeper.shared.getSpeed()) * deltaTime
                 
         // Move to bottom until off-screen, move to top and restart
         backgroundA.position.y -= dy

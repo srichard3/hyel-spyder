@@ -4,6 +4,7 @@ class Spider {
     static let shared = Spider()
     
     var entity: Entity?
+    var cageSprite: SKSpriteNode?
     var attackTimer: Timer?
     
     let attackInterval: TimeInterval = 5
@@ -17,7 +18,7 @@ class Spider {
    
     var isFrozen = false
     
-    public func configure(scale: CGFloat, texture: SKTexture, targetScene: SKScene){
+    public func configure(scale: CGFloat, texture: SKTexture, cageTexture: SKTexture, targetScene: SKScene){
         // Start spider offscreen
         let startPos = CGPoint(x: 0, y: -texture.size().height * scale)
         
@@ -30,7 +31,20 @@ class Spider {
             type: GameObjectType.spider,
             startPos: startPos
         )
-       
+      
+        // Set up cage
+        cageSprite = SKSpriteNode(texture: cageTexture)
+        
+        if let cage = cageSprite, let entity = self.entity {
+            targetScene.addChild(cage)
+           
+            // Make cage slightly bigger so spider fits
+            cage.setScale(scale + 1)
+            
+            // Ensure it's on top of spider
+            cage.zPosition = entity.node.zPosition + 1
+        }
+        
         // Set lerp position to default
         self.targetPos = startPos
     }
@@ -122,23 +136,33 @@ class Spider {
             }
         }
     }
-    
-    public func setFrozen(to status: Bool){
+ 
+    /// Freeze movement
+    public func freeze(){
         // Don't re-run already set state transition
-        if status == isFrozen {
+        if isFrozen {
+            return
+        }
+        
+        // Set frozen state
+        if let entity = self.entity {
+            entity.node.isPaused = true
+            
+            isFrozen = true
+        }
+    }
+  
+    /// Unfreeze movement
+    public func unfreeze(){
+        // Don't re-run already set state transition
+        if !isFrozen {
             return
         }
 
-        // Set frozen state
         if let entity = self.entity {
-            isFrozen = status
-            if isFrozen == true {
-                // Pause any running actions
-                entity.node.isPaused = true
-            } else {
-                // Unpause running actions
-                entity.node.isPaused = false
-            }
+            entity.node.isPaused = false
+            
+            isFrozen = false
         }
     }
     
@@ -165,7 +189,14 @@ class Spider {
         }
        
         if let entity = self.entity {
+            // Update entity
             entity.update()
+           
+            // Make cage stay on top of spider
+            if let cage = self.cageSprite {
+                cage.position = entity.node.position
+            }
         }
+        
     }
 }

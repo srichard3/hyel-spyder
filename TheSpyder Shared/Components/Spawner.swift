@@ -7,14 +7,14 @@ class Spawner{
     var targetScene: SKScene?
     
     var spawnTimer: Timer?
-    var spawnInterval: TimeInterval = 0.75
-    var spawnIntervalDecrement: CGFloat = 0.05
+    var spawnInterval = 0.75
+    var spawnIntervalDecrement = 0.05
   
     var spawnChoiceTable = Array<GameObjectType>()
     var spawnWeights: Dictionary<GameObjectType, Int> = [
-        .car : 100,
+        .car : 0,
         .horn : 100,
-        .drink : 5,
+        .drink : 100,
         .freshener : 0
     ]
 
@@ -22,22 +22,19 @@ class Spawner{
     var possibleCars: [SKTexture]?
     var possibleLanes: [CGPoint]?
     var carShadowTexture: SKTexture?
-    var carScale: CGFloat = 1
+    var carScale = 1.0
   
     var powerups = Array<Powerup>()
     var powerupTextures: Dictionary<GameObjectType, SKTexture>?
-    var powerupScale: CGFloat = 1
+    var powerupScale = 1.0
     
-    var speed: CGFloat = 1
-
     /// Configures the car spawner with the parameters it needs.
-    public func configure(targetScene: SKScene, possibleCars: [SKTexture], possibleLanes: [CGPoint], powerupTextures: Dictionary<GameObjectType, SKTexture>, carShadow: SKTexture?, carSpeed: CGFloat, carScale: CGFloat){
+    public func configure(targetScene: SKScene, possibleCars: [SKTexture], possibleLanes: [CGPoint], powerupTextures: Dictionary<GameObjectType, SKTexture>, carShadow: SKTexture?, carScale: CGFloat){
         self.targetScene = targetScene
         self.possibleCars = possibleCars
         self.possibleLanes = possibleLanes
         self.powerupTextures = powerupTextures
         self.carShadowTexture = carShadow
-        self.speed = carSpeed
         self.carScale = carScale
      
         // Add each item (weight) times to the choice table
@@ -71,7 +68,7 @@ class Spawner{
                     shadow: carShadowTexture,
                     target: scene,
                     startPos: CGPoint(x: chosenLane.x, y: scene.frame.height + chosenCarTexture.size().height * carScale),
-                    startVel: CGVector(dx: 0, dy: -speed)
+                    startVel: CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
                 )
                 
                 cars.append(newCar)
@@ -84,7 +81,7 @@ class Spawner{
                     target: scene,
                     type: randomItem,
                     startPos: CGPoint(x: chosenLane.x, y: scene.frame.height + chosenPowerupTexture!.size().height * carScale),
-                    startVel: CGVector(dx: 0, dy: -speed)
+                    startVel: CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
                 )
                 
                 powerups.append(newPowerup)
@@ -141,7 +138,7 @@ class Spawner{
                     currentCar.entity.update()
                     
                     // Make cars respond to velocity changes in real time
-                    currentCar.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -speed)
+                    currentCar.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
                     
                     i = i + 1
                 }
@@ -158,7 +155,7 @@ class Spawner{
                     powerups.remove(at: i)
                 } else {
                     currentPowerup.entity.update()
-                    currentPowerup.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -speed)
+                    currentPowerup.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
                     i += 1
                 }
             }

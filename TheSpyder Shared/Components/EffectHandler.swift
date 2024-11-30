@@ -4,11 +4,15 @@ class EffectHandler {
     static let shared = EffectHandler()
 
     let slowdownDuration = 5.0
+    let slowdownSpeed = 500
+    let lastSpeed = 0
+
     let spawnBlockDuration = 1.0
 
     var overlaySprite: SKSpriteNode?
     
     var timer: Timer?
+    var lastEffector: GameObjectType? // Causer of the last effect
 
     public func configure(overlay: SKTexture, targetScene: SKScene){
         self.overlaySprite = SKSpriteNode(texture: overlay)
@@ -35,9 +39,11 @@ class EffectHandler {
     /// Fade the overlay in
     func fadeInOverlay(transitionDuration: CGFloat, color: CGColor){
         if let overlaySprite = self.overlaySprite {
-            // Ensure overlay is off
+            // Set overlay color and ensure it's off
+            overlaySprite.colorBlendFactor = 1
+            overlaySprite.color = UIColor(cgColor: color)
             overlaySprite.alpha = 0
-            
+
             // Run fade-in transition
             let fadeIn = SKAction.fadeAlpha(to: 1, duration: transitionDuration)
             overlaySprite.run(fadeIn)
@@ -58,8 +64,16 @@ class EffectHandler {
     
     /// Immediately turn on the overlay and fade it out over the given duration
     func flashOverlay(duration: CGFloat, color: CGColor){
+        
+        
+        
         if let overlaySprite = self.overlaySprite {
-            // Turn the overlay on
+            // Cancel other transition
+            overlaySprite.removeAllActions()
+            
+            // Set overlay color and ensure it's on
+            overlaySprite.colorBlendFactor = 1
+            overlaySprite.color = UIColor(cgColor: color)
             overlaySprite.alpha = 1
 
             // Run fade-out transition
@@ -70,6 +84,14 @@ class EffectHandler {
 
     /// Begins run of a specified effect
     func runEffect(for type: GameObjectType){
+        // If the new effector is same as last, invalidate timer; we want to restart that powerup's effect
+        if type == lastEffector, let timer = self.timer {
+            self.unsetEffect(for: type)
+            timer.invalidate()
+        }
+        
+        lastEffector = type
+        
         // This is the duration that our run of the next effect will have
         var selectedDuration: TimeInterval
       
@@ -119,8 +141,11 @@ class EffectHandler {
         case .drink:
             print("slowing down!")
            
-            // Start blue overlay
-            fadeInOverlay(transitionDuration: 0.5, color: CGColor(red: 0, green: 0, blue: 1, alpha: 0.5))
+            // Start overlay
+            fadeInOverlay(transitionDuration: 0.5, color: CGColor(red: 0, green: 0.25, blue: 0, alpha: 0.5))
+            
+            // Slow down
+            SpeedKeeper.shared.startSpeedOverride(speed: slowdownSpeed)
         default:
             print("no effect")
         }
@@ -137,6 +162,11 @@ class EffectHandler {
             Spider.shared.start()
         case .drink:
             print("restoring speed!")
+            // Show overlay again
+            fadeOutOverlay(transtionDuration: 0.5)
+            
+            // Restore speed
+            SpeedKeeper.shared.stopSpeedOverride()
         default:
             print("nothing to restore")
         }

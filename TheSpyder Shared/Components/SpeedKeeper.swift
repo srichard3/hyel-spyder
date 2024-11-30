@@ -4,47 +4,70 @@ import SpriteKit
 class SpeedKeeper{
     static let shared = SpeedKeeper()
 
-    var speed: CGFloat = 600
-    var speedupAmount: CGFloat = 120
-    var scoreUntilSpeedup: Int = 50
-    var scoreUntilSpeedupIncrement: Int = 100
+    var speed = 600
+    var overriddenSpeed = 600
+    var speedupAmount = 120
+    var scoreUntilSpeedup = 50
+    var scoreUntilSpeedupIncrement = 100
 
-    var lastSpeedBeforeFreeze: CGFloat = 0
-    var isFrozen = false
+    private var lastSpeedBeforeFreeze = 0
+    private var isFrozen = false
+    private var isOverridden = false
+  
+    /// Set a speed value that overrides the current one, allowing a custom speed while the true one still updates in the background
+    public func startSpeedOverride(speed: Int){
+        isOverridden = true
+        overriddenSpeed = speed
+    }
+   
+    /// Unset the overridden state, returning normal speed
+    public func stopSpeedOverride(){
+        isOverridden = false
+    }
+ 
+    public func freeze(){
+        isFrozen = true
+    }
+    
+    public func unfreeze(){
+        isFrozen = false
+    }
+    
+    /// Get the speed to apply generally
+    public func getSpeed() -> Int {
+        if isFrozen {
+            return 0
+        } else if isOverridden {
+            return overriddenSpeed
+        } else {
+            return speed
+        }
+    }
+  
+    /// Get speed to apply to cars
+    public func getCarSpeed() -> Int {
+        let carSpeedOffset = 30
+        
+        if isFrozen {
+            return 0
+        } else if isOverridden {
+            return overriddenSpeed - carSpeedOffset
+        } else {
+            return speed - carSpeedOffset
+        }
+    }
     
     /// Update the speed based on given score
     public func update(){
-        if !isFrozen {
-            // Set speed to what it was before last freeze
-            if lastSpeedBeforeFreeze != 0 {
-                speed = lastSpeedBeforeFreeze
-                lastSpeedBeforeFreeze = 0
-            }
-
-            // Make currently spawned cars respond instantly to speed changes, always, as long as this isn't frozen
-            Spawner.shared.speed = speed - 30
-
-            // If current score exceeds speedup threshold, increase game speed and score multiplier
-            if ScoreKeeper.shared.score >= scoreUntilSpeedup {
-                
-                speed += speedupAmount
-                scoreUntilSpeedup += scoreUntilSpeedupIncrement
-               
-                Spawner.shared.spawnInterval -= Spawner.shared.spawnIntervalDecrement
-
-                ScoreKeeper.shared.multiplier += ScoreKeeper.shared.multiplierIncrement
-            }
-        }
-        
-        else if isFrozen {
-            // Keep record of speed before freeze and set it to 0 for now
-            if lastSpeedBeforeFreeze == 0 {
-                lastSpeedBeforeFreeze = speed
-                speed = 0
-            }
-               
-            // Make spawned cars respond to that change
-            Spawner.shared.speed = 0
+        // If current score exceeds speedup threshold, increase game speed and score multiplier
+        if ScoreKeeper.shared.score >= scoreUntilSpeedup {
+            
+            speed += speedupAmount
+            scoreUntilSpeedup += scoreUntilSpeedupIncrement
+            
+            Spawner.shared.spawnInterval -= Spawner.shared.spawnIntervalDecrement
+            
+            ScoreKeeper.shared.multiplier += ScoreKeeper.shared.multiplierIncrement
         }
     }
 
