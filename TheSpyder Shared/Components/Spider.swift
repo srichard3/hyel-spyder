@@ -3,22 +3,24 @@ import SpriteKit
 class Spider {
     static let shared = Spider()
     
-    var entity: Entity?
-    var cageSprite: SKSpriteNode?
-    var attackTimer: Timer?
+    private var entity: Entity?
+    private var cageSprite: SKSpriteNode?
+    private var attackTimer: Timer?
     
-    let attackInterval: TimeInterval = 5
-    let peekDuration: TimeInterval = 3.0
-    let snatchDuration: TimeInterval = 0.5
+    private let attackInterval: TimeInterval = 5
+    private let peekDuration: TimeInterval = 3.0
+    private let snatchDuration: TimeInterval = 0.5
     
-    var possibleAttackTargets = Array<CGPoint>()
+    private var possibleAttackTargets: Array<CGPoint>?
+    private var forbiddenPos: CGPoint?
 
-    let smoothTime = 7.5
-    var targetPos: CGPoint?
+    private let smoothTime = 7.5
+    private var targetPos: CGPoint?
    
-    var isFrozen = false
+    private var isFrozen = false
+    private var isForbidden = false
     
-    public func configure(scale: CGFloat, texture: SKTexture, cageTexture: SKTexture, targetScene: SKScene){
+    public func configure(scale: CGFloat, texture: SKTexture, cageTexture: SKTexture, attackTargets: Array<CGPoint>, targetScene: SKScene){
         // Start spider offscreen
         let startPos = CGPoint(x: 0, y: -texture.size().height * scale)
         
@@ -43,83 +45,85 @@ class Spider {
             
             // Ensure it's on top of spider
             cage.zPosition = entity.node.zPosition + 1
+            
+            // It should be hidden at start
+            cage.isHidden = true
         }
         
         // Set lerp position to default
         self.targetPos = startPos
+        
+        // Set position to go to when forbidden to screen bottom just below player
+        if let view = targetScene.view, let entity = self.entity {
+            self.forbiddenPos = CGPoint(x: view.bounds.midX, y: 0 + entity.node.frame.height + 20)
+        }
+        
+        // Assign attack targets
+        self.possibleAttackTargets = attackTargets
     }
    
     /// Run sequence of spider attack to a given point
     @objc func attack(){
-        if possibleAttackTargets.isEmpty {
-            return
-        }
-       
-        if self.targetPos == nil {
-            return
-        }
-        
-        if self.entity == nil {
-            return
-        }
-      
-        // Pick random attack target
-        let attackTarget = possibleAttackTargets[Int.random(in: 0..<possibleAttackTargets.count)]
-        
-        // Move to peek
-        let moveToPeek = SKAction.run {
-            self.targetPos!.x = attackTarget.x
-            self.targetPos!.y = 0
-        }
-        
-        // Stay peeked for a bit
-        let stayPeeked = SKAction.wait(forDuration: peekDuration)
-        
-        // Then snatch!
-        let snatch = SKAction.run {
-            self.targetPos!.x = attackTarget.x
-            self.targetPos!.y = attackTarget.y
-        }
-        
-        // Stay in snatching position for a bit
-        let staySnatched = SKAction.wait(forDuration: snatchDuration)
-        
-        // Move back down
-        let moveBackDown = SKAction.run {
-            self.targetPos!.x = self.entity!.node.parent == nil ? 0 : self.entity!.node.parent!.frame.midX
-            self.targetPos!.y = -self.entity!.node.frame.height
-        }
-   
-        // Start the timer again
-        let restartTimer = SKAction.run {
-            self.attackTimer = Timer.scheduledTimer(withTimeInterval: self.attackInterval, repeats: false) { timer in
-                timer.invalidate()
-                self.attack()
+        print("trying to run spider attack...")
+    
+        if let attackTargets = possibleAttackTargets {
+            if attackTargets.isEmpty {
+                return
+            }
+            
+            if targetPos != nil {
+                print("attack will be run successfully!")
+                
+                // Pick random attack target
+                let attackTarget = attackTargets[Int.random(in: 0..<attackTargets.count)]
+                
+                // Move to peek
+                let moveToPeek = SKAction.run {
+                    self.moveTo(position: CGPoint(x: attackTarget.x, y: 0))
+                }
+                
+                // Stay peeked for a bit
+                let stayPeeked = SKAction.wait(forDuration: peekDuration)
+                
+                // Then snatch!
+                let snatch = SKAction.run {
+                    self.moveTo(position: CGPoint(x: attackTarget.x, y: attackTarget.y))
+                }
+                
+                // Stay in snatching position for a bit
+                let staySnatched = SKAction.wait(forDuration: snatchDuration)
+                
+                // Move back down
+                let moveBackDown = SKAction.run {
+                    self.moveOffscreen()
+                }
+           
+                // Start the timer again
+                let restartTimer = SKAction.run {
+                    self.attackTimer = Timer.scheduledTimer(withTimeInterval: self.attackInterval, repeats: false) { timer in
+                        timer.invalidate()
+                        self.attack()
+                    }
+                }
+                
+                // Run sequence
+                let sequence = [
+                    moveToPeek,
+                    stayPeeked,
+                    snatch,
+                    staySnatched,
+                    moveBackDown,
+                    restartTimer
+                ]
+                
+                self.entity!.node.run(SKAction.sequence(sequence))
             }
         }
-        
-        // Run sequence
-        let sequence = [
-            moveToPeek,
-            stayPeeked,
-            snatch,
-            staySnatched,
-            moveBackDown,
-            restartTimer
-        ]
-        
-        self.entity!.node.run(SKAction.sequence(sequence))
     }
       
-    /// Make the spider move towards its target position using lerp
-    private func lerpMove(with deltaTime: CGFloat){
-        if let entity = self.entity, let targetPos = self.targetPos {
-            entity.node.position.x = lerp(entity.node.position.x, targetPos.x, smoothTime * deltaTime)
-            entity.node.position.y = lerp(entity.node.position.y, targetPos.y, smoothTime * deltaTime)
-        }
-    }
-
     public func start(){
+        print("restarting spider atk timer! interval: \(self.attackInterval)")
+
         // Run the timer; doesn't repeat because it restarts itself
         self.attackTimer = Timer.scheduledTimer(timeInterval: self.attackInterval, target: self, selector: #selector(self.attack), userInfo: nil, repeats: false)
     }
@@ -165,8 +169,36 @@ class Spider {
             isFrozen = false
         }
     }
-    
-    public func moveOffscreen(){
+  
+    /// Forbids the spider from doing anything
+    public func forbid(){
+        if let destinationPos = forbiddenPos, let cageSprite = self.cageSprite {            // Abort attacks
+            stop()
+            
+            // Move to the forbidden pos smoothly
+            moveTo(position: destinationPos)
+            
+            // Show the cage sprite
+            cageSprite.isHidden = false
+        }
+    }
+
+    /// Gives back the spider permission to attaclk
+    public func unforbid(){
+        if let cageSprite = self.cageSprite {
+            // Hide the cage sprite
+            cageSprite.isHidden = true
+            
+            // Move offscreen
+            moveOffscreen(shouldDoInstantly: false)
+            
+            // Resume attacks
+            start()
+        }
+    }
+   
+    /// Teleport somewhere
+    public func moveTo(position: CGPoint, teleport: Bool = false){
         if self.targetPos == nil {
             return
         }
@@ -174,18 +206,34 @@ class Spider {
         if self.entity == nil {
             return
         }
-       
-        // Teleport spider offscreen by immediately setting both real pos (node pos) and target pos
-        self.targetPos!.x = self.entity!.node.parent == nil ? 0 : self.entity!.node.parent!.frame.midX
-        self.targetPos!.y = -self.entity!.node.frame.height
-
-        self.entity!.node.position.x = self.targetPos!.x
-        self.entity!.node.position.y = self.targetPos!.y
+      
+        self.targetPos!.x = position.x
+        self.targetPos!.y = position.y
+   
+        // Set direct position as well if teleporting
+        if teleport {
+            self.entity!.node.position.x = self.targetPos!.x
+            self.entity!.node.position.y = self.targetPos!.y
+        }
     }
-    
+  
+    /// Teleport offscreen
+    public func moveOffscreen(shouldDoInstantly: Bool = false){
+        if let entity = self.entity {
+            moveTo(position: CGPoint(
+                x: entity.node.parent == nil ? 0 : entity.node.parent!.frame.midX,
+                y: -entity.node.frame.height
+            ), teleport: shouldDoInstantly)
+        }
+    }
+
     public func update(with deltaTime: CGFloat){
+        // Move using linear interpolation if unfrozen
         if !isFrozen {
-            lerpMove(with: deltaTime)
+            if let entity = self.entity, let targetPos = self.targetPos {
+                entity.node.position.x = lerp(entity.node.position.x, targetPos.x, smoothTime * deltaTime)
+                entity.node.position.y = lerp(entity.node.position.y, targetPos.y, smoothTime * deltaTime)
+            }
         }
        
         if let entity = self.entity {
@@ -197,6 +245,5 @@ class Spider {
                 cage.position = entity.node.position
             }
         }
-        
     }
 }

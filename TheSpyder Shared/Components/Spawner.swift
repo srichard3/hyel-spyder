@@ -2,33 +2,32 @@ import SpriteKit
 
 /// Handle car spawning
 class Spawner{
-    static let shared = Spawner()
+    public static let shared = Spawner()
 
-    var targetScene: SKScene?
+    private var targetScene: SKScene?
     
-    var spawnTimer: Timer?
-    var spawnInterval = 0.75
-    var spawnIntervalDecrement = 0.05
+    private var spawnTimer: Timer?
+    private var spawnInterval = 0.75
+    private var spawnIntervalDecrement = 0.05
   
-    var spawnChoiceTable = Array<GameObjectType>()
-    var spawnWeights: Dictionary<GameObjectType, Int> = [
-        .car : 0,
-        .horn : 100,
-        .drink : 100,
-        .freshener : 0
+    private var spawnChoiceTable = Array<GameObjectType>()
+    private var spawnWeights: Dictionary<GameObjectType, Int> = [
+        .car : 100,
+        .horn : 5,
+        .drink : 10,
+        .freshener : 10
     ]
 
-    var cars = Array<Car>()
-    var possibleCars: [SKTexture]?
-    var possibleLanes: [CGPoint]?
-    var carShadowTexture: SKTexture?
-    var carScale = 1.0
+    private var cars = Array<Car>()
+    private var possibleCars: [SKTexture]?
+    private var possibleLanes: [CGPoint]?
+    private var carShadowTexture: SKTexture?
+    private var carScale = 1.0
   
-    var powerups = Array<Powerup>()
-    var powerupTextures: Dictionary<GameObjectType, SKTexture>?
-    var powerupScale = 1.0
+    private var powerups = Array<Powerup>()
+    private var powerupTextures: Dictionary<GameObjectType, SKTexture>?
+    private var powerupScale = 1.0
     
-    /// Configures the car spawner with the parameters it needs.
     public func configure(targetScene: SKScene, possibleCars: [SKTexture], possibleLanes: [CGPoint], powerupTextures: Dictionary<GameObjectType, SKTexture>, carShadow: SKTexture?, carScale: CGFloat){
         self.targetScene = targetScene
         self.possibleCars = possibleCars
@@ -48,7 +47,20 @@ class Spawner{
             }
         }
     }
+  
+    public func incrementSpawnInterval(){
+        self.spawnInterval += self.spawnIntervalDecrement
+    }
     
+    public func decrementSpawnInterval(){
+        self.spawnInterval -= self.spawnIntervalDecrement
+    }
+    
+    public func resetSpawnInterval(){
+        self.spawnInterval = 0.3
+    }
+    
+    /// Spawns either a car or power-up on a random lane
     @objc func spawnSomething(){
         if let scene = self.targetScene {
             if spawnChoiceTable.isEmpty {
@@ -89,14 +101,12 @@ class Spawner{
         }
     }
     
-    /// Start spawner
     func start(){
         spawnTimer = Timer.scheduledTimer(withTimeInterval: spawnInterval, repeats: true) { timer in
             self.spawnSomething()
         }
     }
    
-    /// Stop spawner
     public func stop(){
         if self.spawnTimer != nil {
             self.spawnTimer?.invalidate()
@@ -118,6 +128,44 @@ class Spawner{
         // Then clear all from tracked active list
         cars.removeAll()
         powerups.removeAll()
+    }
+
+    public func clearCars(){
+        for car in cars {
+            car.entity.removeFromTarget()
+        }
+
+        cars.removeAll()
+    }
+    
+    /// Removes a power-up with a matching sprite node
+    public func removePowerup(with spriteNode: SKSpriteNode){
+        var i = 0
+        while i < powerups.count {
+            let currentPowerup = powerups[i]
+            if spriteNode == currentPowerup.entity.node {
+                currentPowerup.entity.removeFromTarget()
+                powerups.remove(at: i)
+                return
+            } else {
+                i += 1
+            }
+        }
+    }
+  
+    /// Removes a powerup specified by its own object
+    public func removePowerup(target: Powerup){
+        var i = 0
+        while i < powerups.count {
+            let currentPowerup = powerups[i]
+            if currentPowerup.entity.node == target.entity.node {
+                currentPowerup.entity.removeFromTarget()
+                powerups.remove(at: i)
+                return
+            } else {
+                i += 1
+            }
+        }
     }
     
     public func update(){

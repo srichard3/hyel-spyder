@@ -17,6 +17,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let textures = [
         "blank" : SKTexture(imageNamed: "blank"),
         "cage" : SKTexture(imageNamed: "cage"),
+        "forbidden" : SKTexture(imageNamed: "forbidden"),
         "background" : SKTexture(imageNamed: "road"),
         "title" : SKTexture(imageNamed: "logo"),
         "game_over" : SKTexture(imageNamed: "game_over"),
@@ -153,17 +154,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func configureSpider(){
-        // Setup spider
-        Spider.shared.configure(
-            scale: globalScale,
-            texture: textures["spider"]!,
-            cageTexture: textures["cage"]!,
-            targetScene: self
-        )
-      
-        // Give attack targets; player must be initialized first
+        // Need at least 1 attack target; means player must be initialized first!
         if !player.lanes.isEmpty{
-            Spider.shared.possibleAttackTargets = player.lanes
+            Spider.shared.configure(
+                scale: globalScale,
+                texture: textures["spider"]!,
+                cageTexture: textures["forbidden"]!,
+                attackTargets: player.lanes,
+                targetScene: self
+            )
         }
     }
    
@@ -226,7 +225,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.isFrozen = false // TODO: Make player use similar freezing protocol to spider
 
             Spider.shared.stop()
-            Spider.shared.moveOffscreen()
+            Spider.shared.moveOffscreen(shouldDoInstantly: true)
             Spider.shared.unfreeze()
 
             Spawner.shared.stop()
@@ -237,6 +236,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
             SpeedKeeper.shared.reset()
             SpeedKeeper.shared.unfreeze()
+            
+            EffectHandler.shared.cleanup()
         case .inGame:
             gameOverCard.isHidden = true
             titleCard.isHidden = true
@@ -259,6 +260,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             ScoreKeeper.shared.label.isHidden = true
             
             Spawner.shared.stop()
+            
+            EffectHandler.shared.pauseAll()
         }
     }
 
@@ -319,17 +322,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
        
         // Run the actions pertaining to that object's type!
+        var bodyIsPowerup = false
+        
         switch otherBody.categoryBitMask {
         case Entity.categoryBitmaskOf(.car):
             setGameState(to: .gameOver)
         case Entity.categoryBitmaskOf(.freshener):
             EffectHandler.shared.runEffect(for: .freshener)
+            bodyIsPowerup = true
         case Entity.categoryBitmaskOf(.horn):
             EffectHandler.shared.runEffect(for: .horn)
+            bodyIsPowerup = true
         case Entity.categoryBitmaskOf(.drink):
             EffectHandler.shared.runEffect(for: .drink)
+            bodyIsPowerup = true
         default:
             return
+        }
+    
+        // If the object was a powerup, remove it by lookup
+        if bodyIsPowerup {
+            Spawner.shared.removePowerup(with: otherBody.node as! SKSpriteNode)
         }
     }
 

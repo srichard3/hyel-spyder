@@ -3,149 +3,161 @@ import SpriteKit
 class EffectHandler {
     static let shared = EffectHandler()
 
-    let slowdownDuration = 5.0
-    let slowdownSpeed = 500
-    let lastSpeed = 0
-
-    let spawnBlockDuration = 1.0
-
-    var overlaySprite: SKSpriteNode?
-    
+    var targetScene: SKScene?
+    var overlayTexture: SKTexture?
     var timer: Timer?
-    var lastEffector: GameObjectType? // Causer of the last effect
+    var activeEffects = Set<GameObjectType>()
+    var activeEffectOverlays = Array<SKSpriteNode>()
 
     public func configure(overlay: SKTexture, targetScene: SKScene){
-        self.overlaySprite = SKSpriteNode(texture: overlay)
-        
-        if let overlaySprite = self.overlaySprite, let view = targetScene.view {
-            // Add node to scene
-            targetScene.addChild(overlaySprite)
-            
-            // Make the overlay sprite cover the entire screen
-            overlaySprite.size.width = view.frame.width
-            overlaySprite.size.height = view.frame.height
-            
+        self.overlayTexture = overlay
+        self.targetScene = targetScene
+    }
+ 
+    private func spawnOverlay(color: CGColor) -> SKSpriteNode? {
+        // Make the overlay sprite cover the entire screen
+        if let scene = self.targetScene, let view = scene.view {
+            // Make new overlay
+            let overlaySprite = SKSpriteNode(texture: self.overlayTexture)
+           
+            overlaySprite.colorBlendFactor = 1
+            overlaySprite.color = UIColor(cgColor: color)
+
+            // Make it fill screen
             overlaySprite.position.x = view.frame.midX
             overlaySprite.position.y = view.frame.midY
+            
+            overlaySprite.size.width = view.frame.width
+            overlaySprite.size.height = view.frame.height
             
             // It should also be on top of everything
             overlaySprite.zPosition = 999
             
-            // Make it "hidden" by default; control this with opacity for consistency
-            overlaySprite.alpha = 0
-        }
-    }
-  
-    /// Fade the overlay in
-    func fadeInOverlay(transitionDuration: CGFloat, color: CGColor){
-        if let overlaySprite = self.overlaySprite {
-            // Set overlay color and ensure it's off
-            overlaySprite.colorBlendFactor = 1
-            overlaySprite.color = UIColor(cgColor: color)
-            overlaySprite.alpha = 0
-
-            // Run fade-in transition
-            let fadeIn = SKAction.fadeAlpha(to: 1, duration: transitionDuration)
-            overlaySprite.run(fadeIn)
-        }
-    }
- 
-    /// Fade the overlay out
-    func fadeOutOverlay(transtionDuration: CGFloat){
-        if let overlaySprite = self.overlaySprite {
-            // Ensure overlay is on
-            overlaySprite.alpha = 1
-           
-            // Run fade-out transition
-            let fadeOut = SKAction.fadeAlpha(to: 0, duration: transtionDuration)
-            overlaySprite.run(fadeOut)
-        }
-    }
-    
-    /// Immediately turn on the overlay and fade it out over the given duration
-    func flashOverlay(duration: CGFloat, color: CGColor){
-        
-        
-        
-        if let overlaySprite = self.overlaySprite {
-            // Cancel other transition
-            overlaySprite.removeAllActions()
+            // Add to scene
+            scene.addChild(overlaySprite)
             
-            // Set overlay color and ensure it's on
-            overlaySprite.colorBlendFactor = 1
-            overlaySprite.color = UIColor(cgColor: color)
-            overlaySprite.alpha = 1
-
-            // Run fade-out transition
-            let fadeOut = SKAction.fadeAlpha(to: 0, duration: duration)
-            overlaySprite.run(fadeOut)
+            return overlaySprite
         }
+        
+        return nil
     }
-
-    /// Begins run of a specified effect
+   
+    /// Show an overlay for a specific duration, with fade-in and fade-out
     func runEffect(for type: GameObjectType){
-        // If the new effector is same as last, invalidate timer; we want to restart that powerup's effect
-        if type == lastEffector, let timer = self.timer {
-            self.unsetEffect(for: type)
-            timer.invalidate()
-        }
-        
-        lastEffector = type
-        
-        // This is the duration that our run of the next effect will have
-        var selectedDuration: TimeInterval
-      
-        // Select it!
-        switch type {
-        case .horn:
-            selectedDuration = spawnBlockDuration
-        case .freshener:
-            selectedDuration = 0
-        case .drink:
-            selectedDuration = slowdownDuration
-        default:
-            selectedDuration = 0
+        // If the passed effect is already running, avoid re-running it
+        if activeEffects.contains(type) {
+            return
         }
        
-        // Apply powerup effect
-        setEffect(for: type, duration: selectedDuration)
-       
-        // Run the timer, unsetting the effect at completion
-        timer = Timer.scheduledTimer(withTimeInterval: selectedDuration, repeats: false) { timer in
-            self.unsetEffect(for: type)
-            timer.invalidate()
+        activeEffects.insert(type)
+        
+        // Decide overlay color
+        let color: CGColor = {
+            switch type {
+            case .freshener:
+                return CGColor(red: 0.306, green: 0.459, blue: 0.498, alpha: 0.5)
+            case .horn:
+                return CGColor(gray: 1, alpha: 1)
+            case .drink:
+                return CGColor(red: 0.318, green: 0.694, blue: 0.427, alpha: 0.5)
+            default:
+                return CGColor(gray: 1, alpha: 1)
+            }
+        }()
+
+        if let overlaySprite = spawnOverlay(color: color) {
+            // Add overlay to overlays
+            activeEffectOverlays.append(overlaySprite)
+
+            // Decide durations for everything
+            let fadeInDuration = {
+                switch type {
+                case .freshener:
+                    return 0.25
+                case .horn:
+                    return 0
+                case .drink:
+                    return 0.25
+                default:
+                    return 0
+                }
+            }()
+
+            let fadeOutDuration = {
+                switch type {
+                case .freshener:
+                    return 0.25
+                case .horn:
+                    return 1
+                case .drink:
+                    return 0.25
+                default:
+                    return 0
+                }
+            }()
+
+            let stayDuration: TimeInterval = {
+                switch type {
+                case .freshener:
+                    return 10
+                case .horn:
+                    return 0
+                case .drink:
+                    return 5
+                default:
+                    return 0
+                }
+            }()
+
+            // Start from fully invisible state, since we will be fading in
+            overlaySprite.alpha = 0
+            
+            // Run entire effect sequence
+            let sequence = SKAction.sequence([
+                SKAction.fadeAlpha(to: color.alpha, duration: fadeInDuration),
+                SKAction.run {self.setEffect(for: type)},
+                SKAction.wait(forDuration: stayDuration),
+                SKAction.run {self.unsetEffect(for: type)},
+                SKAction.fadeAlpha(to: 0, duration: fadeOutDuration),
+                SKAction.run {
+                    // Remove active effect entry
+                    self.activeEffects.remove(type)
+                },
+                SKAction.removeFromParent(),
+                SKAction.run {
+                    // Remove from overlays array
+                    if let overlaySpriteIndex = self.activeEffectOverlays.firstIndex(of: overlaySprite) {
+                        self.activeEffectOverlays.remove(at: overlaySpriteIndex)
+                    }
+                }
+            ])
+            
+            overlaySprite.run(sequence)
         }
     }
    
     /// Apply the powerup's effect
-    func setEffect(for type: GameObjectType, duration: CGFloat){
+    func setEffect(for type: GameObjectType){
         switch type {
         case .horn:
             print("blanking!")
-            // Flash white
-            flashOverlay(duration: duration, color: CGColor(gray: 1, alpha: 1))
-           
+
             // Stop spawning stuff for a bit
             Spawner.shared.stop()
-            Spawner.shared.clear()
+            Spawner.shared.clearCars()
 
             // Swat the spider
             Spider.shared.stop()
-            Spider.shared.moveOffscreen()
         case.freshener:
-            print("swatting spider!")
+            print("forbidding spider!")
             
-            // Swat the spider
-            Spider.shared.stop()
-            Spider.shared.moveOffscreen()
+            // Forbidthe spider
+            Spider.shared.forbid()
         case .drink:
             print("slowing down!")
-           
-            // Start overlay
-            fadeInOverlay(transitionDuration: 0.5, color: CGColor(red: 0, green: 0.25, blue: 0, alpha: 0.5))
             
             // Slow down
-            SpeedKeeper.shared.startSpeedOverride(speed: slowdownSpeed)
+            SpeedKeeper.shared.startSpeedOverride(speed: 400)
         default:
             print("no effect")
         }
@@ -156,19 +168,47 @@ class EffectHandler {
         switch type {
         case .horn:
             print("resuming spawns!")
+            
+            // Allow new spawns
             Spawner.shared.start()
+            Spider.shared.start()
         case.freshener:
             print("spider active again!")
-            Spider.shared.start()
+            
+            // Spider can attack again
+            Spider.shared.unforbid()
         case .drink:
             print("restoring speed!")
-            // Show overlay again
-            fadeOutOverlay(transtionDuration: 0.5)
             
-            // Restore speed
+            // Restore old speed
             SpeedKeeper.shared.stopSpeedOverride()
         default:
             print("nothing to restore")
         }
+    }
+   
+    func pauseAll(){
+        for overlay in activeEffectOverlays {
+            overlay.isPaused = true
+        }
+    }
+    
+    func unpauseAll(){
+        for overlay in activeEffectOverlays {
+            overlay.isPaused = false
+        }
+    }
+
+    func cleanup(){
+        // Remove all active effects
+        activeEffects.removeAll()
+        
+        // Remove all overlay entries
+        for overlay in activeEffectOverlays {
+            overlay.removeAllActions()
+            overlay.removeFromParent()
+        }
+        
+        activeEffectOverlays.removeAll()
     }
 }

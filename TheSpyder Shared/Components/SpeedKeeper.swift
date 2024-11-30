@@ -65,14 +65,18 @@ class SpeedKeeper{
             speed += speedupAmount
             scoreUntilSpeedup += scoreUntilSpeedupIncrement
             
-            Spawner.shared.spawnInterval -= Spawner.shared.spawnIntervalDecrement
+            Spawner.shared.decrementSpawnInterval()
             
             ScoreKeeper.shared.multiplier += ScoreKeeper.shared.multiplierIncrement
         }
     }
 
     public func reset(){
+        isOverridden = false
+        
         speed = 600
         scoreUntilSpeedup = 50
+        
+        Spawner.shared.resetSpawnInterval()
     }
 }
