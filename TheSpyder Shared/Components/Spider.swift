@@ -2,6 +2,8 @@ import SpriteKit
 
 class Spider {
     static let shared = Spider()
+
+    private var targetScene: SKScene?
     
     private var entity: Entity?
     private var cageSprite: SKSpriteNode?
@@ -60,6 +62,9 @@ class Spider {
         
         // Assign attack targets
         self.possibleAttackTargets = attackTargets
+        
+        // Assign target scene
+        self.targetScene = targetScene
     }
    
     /// Run sequence of spider attack to a given point
@@ -80,6 +85,10 @@ class Spider {
                 // Move to peek
                 let moveToPeek = SKAction.run {
                     self.moveTo(position: CGPoint(x: attackTarget.x, y: 0))
+                    
+                    if let scene = self.targetScene {
+                        AudioHandler.shared.playSoundAsync("peek", target: scene)
+                    }
                 }
                 
                 // Stay peeked for a bit
@@ -88,6 +97,10 @@ class Spider {
                 // Then snatch!
                 let snatch = SKAction.run {
                     self.moveTo(position: CGPoint(x: attackTarget.x, y: attackTarget.y))
+                    
+                    if let scene = self.targetScene {
+                        AudioHandler.shared.playSoundAsync("attack", target: scene)
+                    }
                 }
                 
                 // Stay in snatching position for a bit
@@ -96,6 +109,10 @@ class Spider {
                 // Move back down
                 let moveBackDown = SKAction.run {
                     self.moveOffscreen()
+                    
+                    if let scene = self.targetScene {
+                        AudioHandler.shared.playSoundAsync("hide", target: scene)
+                    }
                 }
            
                 // Start the timer again

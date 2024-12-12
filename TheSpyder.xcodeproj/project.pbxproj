@@ -16,6 +16,7 @@
 			membershipExceptions = (
 				Actions.sks,
 				Assets.xcassets,
+				Components/AudioHandler.swift,
 				Components/Car.swift,
 				Components/EffectHandler.swift,
 				Components/Entity.swift,
@@ -28,10 +29,13 @@
 				font.ttf,
 				GameScene.sks,
 				GameScene.swift,
+				smoke.sks,
 				Sounds/attack.mp3,
 				Sounds/crash.mp3,
 				Sounds/hide.mp3,
 				Sounds/peek.mp3,
+				Sounds/powerup.wav,
+				Sounds/switch.mp3,
 			);
 			target = 053C70622CCE68FE0093D173 /* TheSpyder iOS */;
 		};

@@ -8,10 +8,42 @@ class EffectHandler {
     var timer: Timer?
     var activeEffects = Set<GameObjectType>()
     var activeEffectOverlays = Array<SKSpriteNode>()
+    var indicatorLabel: SKLabelNode?
+    
+    var tooltips: Dictionary<GameObjectType, String> = [
+        .horn: "All Cars Gone",
+        .freshener: "Spider Blocked",
+        .drink: "Slowed Down"
+    ]
 
-    public func configure(overlay: SKTexture, targetScene: SKScene){
+    var overlayColors: Dictionary<GameObjectType, CGColor> = [
+        .horn: CGColor(gray: 1, alpha: 1),
+        .freshener: CGColor(red: 0.306, green: 0.459, blue: 0.498, alpha: 0.5),
+        .drink: CGColor(red: 0.318, green: 0.694, blue: 0.427, alpha: 0.5)
+
+    ]
+
+    public func configure(overlay: SKTexture, labelFontName: String, targetScene: SKScene){
         self.overlayTexture = overlay
         self.targetScene = targetScene
+
+        // Set up label node
+        self.indicatorLabel = SKLabelNode()
+        if let label = self.indicatorLabel {
+            print("made fx label")
+            
+            label.fontName = labelFontName
+            label.fontSize = 16
+            label.zPosition = CGFloat(GameObjectType.gui.rawValue)
+            label.position = CGPoint(
+                x: ScoreKeeper.shared.label.position.x,
+                y: ScoreKeeper.shared.label.position.y - 40 // 30 is magic number
+            )
+            
+            targetScene.addChild(label)
+        } else {
+            print("did not make fx label")
+        }
     }
  
     private func spawnOverlay(color: CGColor) -> SKSpriteNode? {
@@ -52,18 +84,7 @@ class EffectHandler {
         activeEffects.insert(type)
         
         // Decide overlay color
-        let color: CGColor = {
-            switch type {
-            case .freshener:
-                return CGColor(red: 0.306, green: 0.459, blue: 0.498, alpha: 0.5)
-            case .horn:
-                return CGColor(gray: 1, alpha: 1)
-            case .drink:
-                return CGColor(red: 0.318, green: 0.694, blue: 0.427, alpha: 0.5)
-            default:
-                return CGColor(gray: 1, alpha: 1)
-            }
-        }()
+        let color = overlayColors[type]!
 
         if let overlaySprite = spawnOverlay(color: color) {
             // Add overlay to overlays
@@ -117,12 +138,12 @@ class EffectHandler {
                 SKAction.fadeAlpha(to: color.alpha, duration: fadeInDuration),
                 SKAction.run {self.setEffect(for: type)},
                 SKAction.wait(forDuration: stayDuration),
-                SKAction.run {self.unsetEffect(for: type)},
-                SKAction.fadeAlpha(to: 0, duration: fadeOutDuration),
                 SKAction.run {
-                    // Remove active effect entry
+                    // Remove active effect entry; must do this first for text to be updated correctly since it checks the array of actives
                     self.activeEffects.remove(type)
                 },
+                SKAction.run {self.unsetEffect(for: type)},
+                SKAction.fadeAlpha(to: 0, duration: fadeOutDuration),
                 SKAction.removeFromParent(),
                 SKAction.run {
                     // Remove from overlays array
@@ -138,6 +159,32 @@ class EffectHandler {
    
     /// Apply the powerup's effect
     func setEffect(for type: GameObjectType){
+        // Update the indicator label
+        if let label = self.indicatorLabel {
+            // For some reason we need to make set into array to index it...
+            let activeEffectsAsArray = Array(activeEffects)
+            
+            var labelText = ""
+            for i in 0..<activeEffectsAsArray.count {
+                print("\(activeEffectsAsArray[i])")
+                // Add a plus after the current effect text being processed if it isn't the last one
+                if i < activeEffectsAsArray.count - 1 {
+                    labelText += "\(tooltips[activeEffectsAsArray[i]]!) + "
+                // Otherwise, just add the text and nothing after it
+                } else {
+                    labelText += "\(tooltips[activeEffectsAsArray[i]]!)!"
+                }
+            }
+            
+            print("made label text: \(labelText)")
+            
+            // The resulting text should look like "PowerUp1 + PowerUp2" instead of "PowerUp! + PowerUp2 + "
+            label.text = labelText
+            
+            label.isHidden = false
+        }
+       
+        // Set the actual effect
         switch type {
         case .horn:
             print("blanking!")
@@ -165,6 +212,32 @@ class EffectHandler {
    
     /// De-apply the powerup's effect
     func unsetEffect(for type: GameObjectType) {
+        // Unset the effect tooltip
+        if let label = self.indicatorLabel {
+            // If there are effects left, update label accordingly
+            if !self.activeEffects.isEmpty {
+                // For some reason we need to make set into array to index it...
+                let activeEffectsAsArray = Array(activeEffects)
+                
+                var labelText = ""
+                for i in 0..<activeEffectsAsArray.count {
+                    // Add a plus after the current effect text being processed if it isn't the last one
+                    if i < activeEffectsAsArray.count - 1 {
+                        labelText += "\(tooltips[activeEffectsAsArray[i]]!) + "
+                    // Otherwise, just add the text and nothing after it
+                    } else {
+                        labelText += "\(tooltips[activeEffectsAsArray[i]]!)!"
+                    }
+                }
+                
+                // The resulting text should look like "PowerUp1 + PowerUp2" instead of "PowerUp! + PowerUp2 + "
+                label.text = labelText
+            // Otherwise, just hide it
+            } else {
+                label.isHidden = true
+            }
+        }
+        
         switch type {
         case .horn:
             print("resuming spawns!")
@@ -210,5 +283,10 @@ class EffectHandler {
         }
         
         activeEffectOverlays.removeAll()
+        
+        // Hide the label
+        if let label = indicatorLabel {
+            label.isHidden = true
+        }
     }
 }

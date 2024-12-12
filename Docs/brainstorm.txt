@@ -31,3 +31,11 @@ Will fix:
 - [x] Blanks
 - [ ] Spider-swatter
 - [ ] Slowdown
+
+- Sounds
+- Haptics
+- Particles
+- Small tutorial type thing in the beginning
+- Small explanations for the power ups
+- Game over animation
+- Make sure rest of game is bug free

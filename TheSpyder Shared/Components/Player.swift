@@ -11,13 +11,23 @@ class Player{
    
     var isFrozen = false
     
-    init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
+    var smokeParticles: SKEmitterNode
+    
+    init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, smokeParticles: SKEmitterNode, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
         // Set up entity
         self.entity = Entity(scale: scale, texture: texture, shadow: shadow, target: target, type: GameObjectType.player, startPos: startPos)
        
         // Use precise collision
         self.entity.node.physicsBody?.usesPreciseCollisionDetection = true
-        
+   
+        // Setup smoke
+        self.smokeParticles = smokeParticles
+        self.entity.node.addChild(self.smokeParticles)
+       
+        self.smokeParticles.setScale(0.3) // Not very sure how childed particles work so these are eyeball numbers!
+        self.smokeParticles.position.y -= 10
+        self.smokeParticles.targetNode = target
+
         targetPos = CGPoint(x: 0, y: 0)
         targetRot = 0
         smoothTime = 7.5

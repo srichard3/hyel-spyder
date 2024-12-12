@@ -32,12 +32,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         "car_red" : SKTexture(imageNamed: "car_r"),
         "car_yellow" : SKTexture(imageNamed: "car_y")
     ]
-   
+  
     var backgroundA: SKSpriteNode!
     var backgroundB: SKSpriteNode!
 
     var titleCard: SKSpriteNode!
     var gameOverCard: SKSpriteNode!
+    var beginLabel: SKLabelNode!
     
     var player: Player!
    
@@ -45,8 +46,25 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var swipeRight: UISwipeGestureRecognizer!
     var tap: UITapGestureRecognizer!
     
-    let hapticFeedback = UIImpactFeedbackGenerator(style: .light)
-   
+    let hapticFeedback = UIImpactFeedbackGenerator(style: .medium)
+
+    // Might want to move this to a dedicated controller...
+    /// Play tremolo/earthquake haptic
+    func playTremblingHaptic(){
+        hapticFeedback.prepare()
+        
+        let pulses = 6 // Play this amount of pulses
+        let pulseDelay = 0.1 // Separated by this amount of time
+            
+        // Schedule all pulses to run at (current time) + (pulseDelay * i) on a background thread
+        for i in 0..<pulses {
+            DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + (pulseDelay * TimeInterval(i))) {
+                // Also make the intensity go down for every pulse
+                self.hapticFeedback.impactOccurred(intensity: 1.0 - (1.0 / CGFloat(pulses)) * CGFloat(i))
+            }
+        }
+    }
+
     func setGlobalScale(from view: SKView){
         // The global scale is based on how much we need to scale the background by to cover the whole scene's frame
         let xScaleFactor = view.frame.width / textures["background"]!.size().width
@@ -96,6 +114,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         )
         
         addChild(titleCard)
+      
+        // Set up begin label
+        beginLabel = SKLabelNode(text: "Swipe to Begin!")
+     
+        beginLabel.fontName = "FFF Forward" 
+        beginLabel.fontSize = 16
+        beginLabel.zPosition = CGFloat(GameObjectType.gui.rawValue)
+        beginLabel.position = CGPoint(x: frame.midX, y: frame.midY - 50) // 50 was eyeballed
+
+        addChild(beginLabel)
         
         // Setup game over card
         gameOverCard = SKSpriteNode(texture: textures["game_over"]!)
@@ -136,6 +164,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             scale: globalScale * 0.8,
             texture: textures["player"]!,
             shadow: textures["shadow"]!,
+            smokeParticles: SKEmitterNode(fileNamed: "smoke")!,
             target: self,
             startPos: CGPoint(
                 x: view.frame.width / 2,
@@ -201,6 +230,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Configure the screen overlay
         EffectHandler.shared.configure(
             overlay: textures["blank"]!,
+            labelFontName: "FFF Forward",
             targetScene: scene
         )
     }
@@ -220,7 +250,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case .title:
             gameOverCard.isHidden = true
             titleCard.isHidden = false
-
+            beginLabel.isHidden = false
+            
             player.recenter()
             player.isFrozen = false // TODO: Make player use similar freezing protocol to spider
 
@@ -241,7 +272,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case .inGame:
             gameOverCard.isHidden = true
             titleCard.isHidden = true
-
+            beginLabel.isHidden = true
+            
             Spider.shared.start()
             
             Spawner.shared.start()
@@ -251,7 +283,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case.gameOver:
             gameOverCard.isHidden = false
             titleCard.isHidden = true
-       
+            beginLabel.isHidden = true
+
             player.isFrozen = true
             Spider.shared.freeze()
             
@@ -306,7 +339,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         let playerIsBodyA = isBody(player.entity.node, which: bodyA)
         let playerIsBodyB = isBody(player.entity.node, which: bodyB)
-
+        
         // If the contact doesn't contain the player, don't process any collision
         if !playerIsBodyA && !playerIsBodyB {
             return
@@ -314,34 +347,36 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // Then, determine which of the 2 bodies is the other body
         var otherBody: SKPhysicsBody
-
+        
         if (playerIsBodyA){
             otherBody = bodyB
         } else {
             otherBody = bodyA
         }
-       
-        // Run the actions pertaining to that object's type!
-        var bodyIsPowerup = false
         
-        switch otherBody.categoryBitMask {
-        case Entity.categoryBitmaskOf(.car):
+        // Game loss case
+        if otherBody.categoryBitMask == Entity.categoryBitmaskOf(.car) || otherBody.categoryBitMask == Entity.categoryBitmaskOf(.spider) {
             setGameState(to: .gameOver)
-        case Entity.categoryBitmaskOf(.freshener):
-            EffectHandler.shared.runEffect(for: .freshener)
-            bodyIsPowerup = true
-        case Entity.categoryBitmaskOf(.horn):
-            EffectHandler.shared.runEffect(for: .horn)
-            bodyIsPowerup = true
-        case Entity.categoryBitmaskOf(.drink):
-            EffectHandler.shared.runEffect(for: .drink)
-            bodyIsPowerup = true
-        default:
-            return
-        }
-    
-        // If the object was a powerup, remove it by lookup
-        if bodyIsPowerup {
+            playTremblingHaptic()
+            AudioHandler.shared.playSoundAsync("crash", target: self)
+        // Powerup collect case
+        } else {
+            // Run powerup effect
+            switch otherBody.categoryBitMask {
+                case Entity.categoryBitmaskOf(.freshener):
+                    EffectHandler.shared.runEffect(for: .freshener)
+                case Entity.categoryBitmaskOf(.horn):
+                    EffectHandler.shared.runEffect(for: .horn)
+                case Entity.categoryBitmaskOf(.drink):
+                    EffectHandler.shared.runEffect(for: .drink)
+                default:
+                    break
+            }
+                
+            // Play collection SFX
+            AudioHandler.shared.playSoundAsync("powerup", target: self)
+            
+            // Remove the powerup
             Spawner.shared.removePowerup(with: otherBody.node as! SKSpriteNode)
         }
     }
@@ -356,8 +391,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Play haptic feedback
         hapticFeedback.impactOccurred()
 
-        // Play swipe sound
-        // self.run(SKAction.playSoundFileNamed("hide", waitForCompletion: false))
+        // Play sound effect
+        AudioHandler.shared.playSoundAsync("switch", target: self)
+        
         
         // No actions save for a tap to reset should be taken in game over
         if gameState == .gameOver {
@@ -372,7 +408,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Change player direction
         player.changeDirection(to: gesture.direction)
     }
-    
+   
     override func didMove(to view: SKView) {
         // Configure everything
         setGlobalScale(from: view)
