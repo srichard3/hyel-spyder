@@ -19,6 +19,9 @@
 - [x] Black background for score text --do this next
     - Use the 4-dupe trick, it's fine...
 - [ ] Music (?)
+- [ ] Fix eyeball scaling to be based on some form of constant
+    - Relate everything to the screen!
+    - Ask ChatGPT for approaches...
 - [ ] Make sure rest of game is bug free
 
 - Handle labels/particles by instantiating the nodes inside the configurer class

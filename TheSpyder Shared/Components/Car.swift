@@ -21,7 +21,7 @@ class Car{
         // Setup smoke
         self.smokeParticles = SKEmitterNode(fileNamed: "smoke")!
     
-        self.smokeParticles.setScale(0.25) // Not very sure how childed particles work so these are eyeball numbers!
+        self.smokeParticles.setScale(0.2) // Not very sure how childed particles work so these are eyeball numbers!
         self.smokeParticles.particleBirthRate /= 2 // Make these spawn less
         self.smokeParticles.position.y -= 10
 

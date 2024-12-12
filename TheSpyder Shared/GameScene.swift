@@ -124,7 +124,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         beginLabel.fontSize = 16
         beginLabel.fontColor = UIColor(cgColor: CGColor(gray: 0.8, alpha: 1))
         beginLabel.zPosition = CGFloat(GameObjectType.gui.rawValue)
-        beginLabel.position = CGPoint(x: frame.midX, y: frame.midY - 50) // 50 was eyeballed
+        beginLabel.position = CGPoint(x: frame.midX, y: frame.midY - 55) // 50 was eyeballed
 
         addChild(beginLabel)
         
