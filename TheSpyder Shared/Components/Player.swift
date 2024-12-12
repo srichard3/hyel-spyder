@@ -12,6 +12,7 @@ class Player{
     var isFrozen = false
     
     var smokeParticles: SKEmitterNode
+    var baseSmokeParticleSpeed: CGFloat
     
     init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, smokeParticles: SKEmitterNode, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
         // Set up entity
@@ -19,18 +20,23 @@ class Player{
        
         // Use precise collision
         self.entity.node.physicsBody?.usesPreciseCollisionDetection = true
-   
+ 
+        // Initialize interpolation movement stuff
+        targetPos = CGPoint(x: 0, y: 0)
+        targetRot = 0
+        smoothTime = 7.5
+
         // Setup smoke
         self.smokeParticles = smokeParticles
-        self.entity.node.addChild(self.smokeParticles)
-       
+    
+        // Cache the speed set in the particle editor
+        self.baseSmokeParticleSpeed = self.smokeParticles.particleSpeed
+        
         self.smokeParticles.setScale(0.3) // Not very sure how childed particles work so these are eyeball numbers!
         self.smokeParticles.position.y -= 10
         self.smokeParticles.targetNode = target
 
-        targetPos = CGPoint(x: 0, y: 0)
-        targetRot = 0
-        smoothTime = 7.5
+        self.entity.node.addChild(self.smokeParticles)
     }
    
     /// Calculate position points the player can switch to
@@ -116,5 +122,9 @@ class Player{
         }
         
         entity.update()
+        
+        // Make smoke particles respond to game speed
+        let particleSpeed = self.baseSmokeParticleSpeed * CGFloat(SpeedKeeper.shared.getSpeed()) * 0.01 // The last factor is eyeballed
+        smokeParticles.particleSpeed = particleSpeed
     }
 }

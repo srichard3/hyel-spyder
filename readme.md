@@ -4,18 +4,22 @@
     - SKAction for onetimes
 - [x] Haptics
     - Note that some crasing occurs if abusing the haptic engine with very short interval
-- [ ] Particles
+- [x] Particles
+    - [x] On player
+    - [x] On other cars 
+    - [x] On powerups 
+    - [x] Ensure they adapt to game speed! It looks very weird if they don't 
+    - [ ] Make sure they're above the overlay (not priority but would be really nice)
     - Should keep moving after death, since the universe's flow of time isn't halted by a meager car crash 
-    - Ensure they adapt to game speed! It looks very weird if they don't 
 - [x] Small tutorial type thing in the beginning
     - [ ] Add swipe indicator arrows
 - [x] Small explanations for the power ups
 - [ ] Game over animation
 - [ ] Polish everything
-- [ ] Black background for score text --do this next
+- [x] Black background for score text --do this next
     - Use the 4-dupe trick, it's fine...
 - [ ] Music (?)
-- [ ] Make sure rest of game is bug free (Yeah Sam... Sure...)
+- [ ] Make sure rest of game is bug free
 
 - Handle labels/particles by instantiating the nodes inside the configurer class
 
@@ -42,3 +46,17 @@ Let's just:
 
 This comes at the cost of not really being able to do colors, but that's a tradeoff I'm willing to make
 It'll look good when I add the 4-way background anyway
+
+# Bugs
+
+- `UIImpactGenerator` crash, I think the cause are short haptics 
+
+# Just 'Cuz Changes
+
+## Overlay Ordering
+
+It looks kinda sick when the overlay only affects the background
+
+I could've just done overlays by tinting the BG then, but oh well...
+
+I'll make it work this way by adding overlays to the ordering of GameObjectTypes!

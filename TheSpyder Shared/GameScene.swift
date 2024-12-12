@@ -51,9 +51,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Might want to move this to a dedicated controller...
     /// Play tremolo/earthquake haptic
     func playTremblingHaptic(){
+        return
+        
         hapticFeedback.prepare()
         
-        let pulses = 6 // Play this amount of pulses
+        let pulses = 4 // Play this amount of pulses
         let pulseDelay = 0.1 // Separated by this amount of time
             
         // Schedule all pulses to run at (current time) + (pulseDelay * i) on a background thread
@@ -120,6 +122,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
      
         beginLabel.fontName = "FFF Forward" 
         beginLabel.fontSize = 16
+        beginLabel.fontColor = UIColor(cgColor: CGColor(gray: 0.8, alpha: 1))
         beginLabel.zPosition = CGFloat(GameObjectType.gui.rawValue)
         beginLabel.position = CGPoint(x: frame.midX, y: frame.midY - 50) // 50 was eyeballed
 
@@ -197,7 +200,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
    
     func configureScoreKeeper(){
         // Add label to scene
-        ScoreKeeper.shared.addLabelToScene(self)
+        ScoreKeeper.shared.configureLabel(self)
     }
    
     func configureSpawner(){
@@ -263,12 +266,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             Spawner.shared.clear()
 
             ScoreKeeper.shared.reset()
-            ScoreKeeper.shared.label.isHidden = true
+            ScoreKeeper.shared.hideLabel()
 
             SpeedKeeper.shared.reset()
             SpeedKeeper.shared.unfreeze()
-            
-            EffectHandler.shared.cleanup()
         case .inGame:
             gameOverCard.isHidden = true
             titleCard.isHidden = true
@@ -279,7 +280,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             Spawner.shared.start()
             
             ScoreKeeper.shared.start()
-            ScoreKeeper.shared.label.isHidden = false
+            ScoreKeeper.shared.unhideLabel()
         case.gameOver:
             gameOverCard.isHidden = false
             titleCard.isHidden = true
@@ -290,11 +291,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             SpeedKeeper.shared.freeze()
 
-            ScoreKeeper.shared.label.isHidden = true
+            ScoreKeeper.shared.hideLabel()
             
             Spawner.shared.stop()
             
             EffectHandler.shared.pauseAll()
+            EffectHandler.shared.cleanup()
         }
     }
 

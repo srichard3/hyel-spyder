@@ -29,6 +29,7 @@
 				font.ttf,
 				GameScene.sks,
 				GameScene.swift,
+				glint.sks,
 				smoke.sks,
 				Sounds/attack.mp3,
 				Sounds/crash.mp3,

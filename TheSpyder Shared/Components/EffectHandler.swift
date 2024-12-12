@@ -18,7 +18,7 @@ class EffectHandler {
 
     var overlayColors: Dictionary<GameObjectType, CGColor> = [
         .horn: CGColor(gray: 1, alpha: 1),
-        .freshener: CGColor(red: 0.306, green: 0.459, blue: 0.498, alpha: 0.5),
+        .freshener: CGColor(red: 240 / 255, green: 53 / 255,  blue: 53 / 255 , alpha: 0.5),
         .drink: CGColor(red: 0.318, green: 0.694, blue: 0.427, alpha: 0.5)
 
     ]
@@ -33,6 +33,7 @@ class EffectHandler {
             print("made fx label")
             
             label.fontName = labelFontName
+            label.fontColor = UIColor(cgColor: CGColor(gray: 0.8, alpha: 1))
             label.fontSize = 16
             label.zPosition = CGFloat(GameObjectType.gui.rawValue)
             label.position = CGPoint(
@@ -62,8 +63,9 @@ class EffectHandler {
             overlaySprite.size.width = view.frame.width
             overlaySprite.size.height = view.frame.height
             
-            // It should also be on top of everything
-            overlaySprite.zPosition = 999
+            // It should also be right above the background
+            // It looks cooler when overlay only affects road :)
+            overlaySprite.zPosition = CGFloat(GameObjectType.background.rawValue) + 1
             
             // Add to scene
             scene.addChild(overlaySprite)
