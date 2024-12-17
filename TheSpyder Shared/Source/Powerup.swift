@@ -19,11 +19,13 @@ class Powerup{
         self.entity.node.physicsBody?.velocity = startVel
         
         // Add particle effect
-        particleEffect = SKEmitterNode(fileNamed: "glint")!
+        self.particleEffect = SKEmitterNode(fileNamed: "glint")!
+
+        self.particleEffect.setScale(0.2) // Eyeballed
+        
+        // Position at bottom
+        self.particleEffect.position.y -= (entity.node.size.height / 2.0) / entity.node.yScale
 
         self.entity.node.addChild(particleEffect)
-
-        particleEffect.setScale(0.2) // Eyeballed
-        particleEffect.position.y -= 7 // Eyeballed
     }
 }

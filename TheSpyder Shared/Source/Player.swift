@@ -50,6 +50,7 @@ class Player{
         // lane 1 = 18 + 22 + 10
         // lane 3 = 18 + 22 + 22 + 9
         // ...
+        
         for i in stride(from: 0, to: laneCount, by: 1) {
             let t = CGFloat(i)
             
@@ -120,8 +121,6 @@ class Player{
         if !isFrozen {
             lerpMove(with: deltaTime) // Must update player position before shadow's position is updated!
         }
-        
-        entity.update()
         
         // Make smoke particles respond to game speed
         let particleSpeed = self.baseSmokeParticleSpeed * CGFloat(SpeedKeeper.shared.getSpeed()) * 0.01 // The last factor is eyeballed

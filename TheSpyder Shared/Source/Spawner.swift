@@ -15,8 +15,8 @@ class Spawner{
     private var spawnWeights: Dictionary<GameObjectType, Int> = [
         .car : 95,
         .horn : 1 * 5,
-        .drink : 2 * 5,
-        .freshener : 1 * 5
+        .drink : 2 * 500,
+        .freshener : 1 * 500
     ]
 
     private var cars = Array<Car>()
@@ -184,8 +184,6 @@ class Spawner{
                     cars.remove(at: i)
                 // Otherwise, update it only
                 } else {
-                    currentCar.entity.update()
-                    
                     // Make cars respond to velocity changes in real time
                     currentCar.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
                     
@@ -203,7 +201,6 @@ class Spawner{
                     currentPowerup.entity.removeFromTarget()
                     powerups.remove(at: i)
                 } else {
-                    currentPowerup.entity.update()
                     currentPowerup.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
                     i += 1
                 }

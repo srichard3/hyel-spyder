@@ -80,7 +80,13 @@ class Spider {
                 print("attack will be run successfully!")
                 
                 // Pick random attack target
-                let attackTarget = attackTargets[Int.random(in: 0..<attackTargets.count)]
+                let randomIndex = Int.random(in: 0..<attackTargets.count)
+                let attackTarget = attackTargets[randomIndex]
+                
+                // Instantly move to that lane offscreen
+                if let entityFrameHeight = self.entity?.node.frame.height {
+                    self.moveTo(position: CGPoint(x: attackTarget.x, y: -entityFrameHeight), teleport: true)
+                }
                 
                 // Move to peek
                 let moveToPeek = SKAction.run {
@@ -108,8 +114,11 @@ class Spider {
                 
                 // Move back down
                 let moveBackDown = SKAction.run {
-                    self.moveOffscreen()
-                    
+                    // Return to same lane it came from in smooth motion
+                    if let entityFrameHeight = self.entity?.node.frame.height {
+                        self.moveTo(position: CGPoint(x: attackTarget.x, y: -entityFrameHeight), teleport: false)
+                    }
+                        
                     if let scene = self.targetScene {
                         AudioHandler.shared.playSoundAsync("hide", target: scene)
                     }
@@ -189,8 +198,13 @@ class Spider {
   
     /// Forbids the spider from doing anything
     public func forbid(){
-        if let destinationPos = forbiddenPos, let cageSprite = self.cageSprite {            // Abort attacks
+        if let destinationPos = forbiddenPos, let cageSprite = self.cageSprite { // Abort attacks
             stop()
+           
+            // Place at same lane to pop out from
+            if let entityFrameHeight = self.entity?.node.frame.height {
+                self.moveTo(position: CGPoint(x: destinationPos.x, y: -entityFrameHeight), teleport: true)
+            }
             
             // Move to the forbidden pos smoothly
             moveTo(position: destinationPos)
@@ -254,9 +268,6 @@ class Spider {
         }
        
         if let entity = self.entity {
-            // Update entity
-            entity.update()
-           
             // Make cage stay on top of spider
             if let cage = self.cageSprite {
                 cage.position = entity.node.position

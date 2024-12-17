@@ -18,15 +18,19 @@
 - [ ] Polish everything
 - [x] Black background for score text --do this next
     - Use the 4-dupe trick, it's fine...
-- [ ] Music (?)
+- [ ] ~Music~ Wheel whirring sound 
 - [ ] Fix eyeball scaling to be based on some form of constant
     - Relate everything to the screen!
     - Ask ChatGPT for approaches...
 - [ ] Make sure rest of game is bug free
 
 - Handle labels/particles by instantiating the nodes inside the configurer class
+- Make spider return to the same lane it came out of
+- 
 
 # Problems
+
+## Audio lag spike could be caused by emmitters
 
 ## (Solved) How do we handle multiple powerups and their labels?
 

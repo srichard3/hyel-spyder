@@ -26,48 +26,32 @@ class Entity{
     init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, type: GameObjectType, startPos: CGPoint = CGPoint(x: 0, y: 0), startRotation: CGFloat = 0){
         self.type = type
        
-        // Setup body node and initialize shadow node
+        // Setup body node
         node = SKSpriteNode(texture: texture)
-     
-        // A shadow may not be given!
-        if shadow != nil {
-            self.shadow = SKSpriteNode(texture: shadow)
-        }
-
-        // Scale them
+        
         node.setScale(scale)
-        
-        if let entityShadow = self.shadow {
-            entityShadow.setScale(scale)
-        }
-
-        // Finish setting up the node first
-        
-        // Position & rotate
         node.position = startPos
         node.zPosition = CGFloat(type.rawValue)
         node.zRotation = startRotation
         
-        // Setup its physics body
+        // Setup body node physics body
         node.physicsBody = SKPhysicsBody(rectangleOf: node.size)
         node.physicsBody?.isDynamic = true
         node.physicsBody?.collisionBitMask = 0
         node.physicsBody?.categoryBitMask = type.rawValue
-   
-        // Set its contact tests
         node.physicsBody?.contactTestBitMask = Entity.contactTestFor(type)
-       
-        // Add to scene
+
         target.addChild(node)
-       
-        // Now finish configuring and adding the shadow
+
+        // Set up shadow, note one might not be given!
+        self.shadow = SKSpriteNode(texture: shadow) // A shadow may not be given!
         if let entityShadow = self.shadow {
-            entityShadow.position = node.position
-            entityShadow.zPosition = CGFloat(GameObjectType.shadow.rawValue)
-            entityShadow.zRotation = node.zRotation
             entityShadow.alpha = 0.2
+            entityShadow.zPosition = CGFloat(GameObjectType.shadow.rawValue)
             
-            target.addChild(entityShadow)
+            node.addChild(entityShadow)
+            
+            print("\(entityShadow.frame.width)")
         }
     }
 
@@ -89,17 +73,8 @@ class Entity{
     // Remove body and shadow nodes from the parent
     public func removeFromTarget(){
         node.removeFromParent()
-        if shadow != nil {
-            shadow?.removeFromParent()
-        }
-    }
-    
-    public func update(){
-        // Keep shadow on the caster
-        // NOTe: The car uses its physics body to move, and it seems to cause this shadow to be off-center...
-        if shadow != nil {
-            shadow!.position = node.position
-            shadow!.zRotation = node.zRotation
+        if let shadow = self.shadow {
+            shadow.removeFromParent()
         }
     }
 }

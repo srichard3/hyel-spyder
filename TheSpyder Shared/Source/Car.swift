@@ -23,10 +23,10 @@ class Car{
     
         self.smokeParticles.setScale(0.2) // Not very sure how childed particles work so these are eyeball numbers!
         self.smokeParticles.particleBirthRate /= 2 // Make these spawn less
-        self.smokeParticles.position.y -= 10
-
-        self.entity.node.addChild(self.smokeParticles)
+            
+        // Position at bottom
+        self.smokeParticles.position.y -= (entity.node.size.height / 2) / entity.node.yScale // Divide by parent scale to undo its effect
         
-        // No need to make these respond to gamespeed since the only one speeding up is the player
+        self.entity.node.addChild(self.smokeParticles)
     }
 }
