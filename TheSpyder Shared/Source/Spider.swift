@@ -2,11 +2,13 @@ import SpriteKit
 
 class Spider {
     static let shared = Spider()
-
+    
     private var targetScene: SKScene?
     
     private var entity: Entity?
     private var cageSprite: SKSpriteNode?
+    private var arrowsSprite: SKSpriteNode?
+    private var arrowsFrames: [SKTexture]?
     private var attackTimer: Timer?
     
     private let attackInterval: TimeInterval = 5
@@ -15,14 +17,13 @@ class Spider {
     
     private var possibleAttackTargets: Array<CGPoint>?
     private var forbiddenPos: CGPoint?
-
+    
     private let smoothTime = 7.5
     private var targetPos: CGPoint?
-   
-    private var isFrozen = false
+    
     private var isForbidden = false
     
-    public func configure(scale: CGFloat, texture: SKTexture, cageTexture: SKTexture, attackTargets: Array<CGPoint>, targetScene: SKScene){
+    public func configure(scale: CGFloat, texture: SKTexture, cageTexture: SKTexture, arrowsFrames: [SKTexture], attackTargets: Array<CGPoint>, targetScene: SKScene){
         // Start spider offscreen
         let startPos = CGPoint(x: 0, y: -texture.size().height * scale)
         
@@ -35,13 +36,13 @@ class Spider {
             type: GameObjectType.spider,
             startPos: startPos
         )
-      
+        
         // Set up cage
         cageSprite = SKSpriteNode(texture: cageTexture)
         
         if let cage = cageSprite, let entity = self.entity {
             targetScene.addChild(cage)
-           
+            
             // Make cage slightly bigger so spider fits
             cage.setScale(scale + 1)
             
@@ -50,6 +51,18 @@ class Spider {
             
             // It should be hidden at start
             cage.isHidden = true
+        }
+        
+        // Set up arrows
+        self.arrowsFrames = arrowsFrames
+        
+        self.arrowsSprite = SKSpriteNode(texture: arrowsFrames.first)
+        if let arrowsSprite = self.arrowsSprite {
+            arrowsSprite.anchorPoint = CGPoint(x: 0.5, y: 0) // Easier to position using midbottom as reference
+            arrowsSprite.isHidden = true
+            arrowsSprite.setScale(scale * 0.8) // Make arrows slightly smaller to fit lane
+            
+            targetScene.addChild(arrowsSprite)
         }
         
         // Set lerp position to default
@@ -66,11 +79,11 @@ class Spider {
         // Assign target scene
         self.targetScene = targetScene
     }
-   
+    
     /// Run sequence of spider attack to a given point
     @objc func attack(){
         print("trying to run spider attack...")
-    
+        
         if let attackTargets = possibleAttackTargets {
             if attackTargets.isEmpty {
                 return
@@ -83,13 +96,14 @@ class Spider {
                 let randomIndex = Int.random(in: 0..<attackTargets.count)
                 let attackTarget = attackTargets[randomIndex]
                 
-                // Instantly move to that lane offscreen
-                if let entityFrameHeight = self.entity?.node.frame.height {
-                    self.moveTo(position: CGPoint(x: attackTarget.x, y: -entityFrameHeight), teleport: true)
-                }
                 
                 // Move to peek
                 let moveToPeek = SKAction.run {
+                    // Instantly move to that lane offscreen
+                    if let entityFrameHeight = self.entity?.node.frame.height {
+                        self.moveTo(position: CGPoint(x: attackTarget.x, y: -entityFrameHeight), teleport: true)
+                    }
+                    
                     self.moveTo(position: CGPoint(x: attackTarget.x, y: 0))
                     
                     if let scene = self.targetScene {
@@ -97,8 +111,18 @@ class Spider {
                     }
                 }
                 
+                // Show arrows
+                let showArrows = SKAction.run {
+                    self.showArrows(at: attackTarget)
+                }
+                
                 // Stay peeked for a bit
                 let stayPeeked = SKAction.wait(forDuration: peekDuration)
+                
+                // Hide arrows
+                let hideArrows = SKAction.run {
+                    self.hideArrows()
+                }
                 
                 // Then snatch!
                 let snatch = SKAction.run {
@@ -118,12 +142,12 @@ class Spider {
                     if let entityFrameHeight = self.entity?.node.frame.height {
                         self.moveTo(position: CGPoint(x: attackTarget.x, y: -entityFrameHeight), teleport: false)
                     }
-                        
+                    
                     if let scene = self.targetScene {
                         AudioHandler.shared.playSoundAsync("hide", target: scene)
                     }
                 }
-           
+                
                 // Start the timer again
                 let restartTimer = SKAction.run {
                     self.attackTimer = Timer.scheduledTimer(withTimeInterval: self.attackInterval, repeats: false) { timer in
@@ -135,7 +159,9 @@ class Spider {
                 // Run sequence
                 let sequence = [
                     moveToPeek,
+                    showArrows,
                     stayPeeked,
+                    hideArrows,
                     snatch,
                     staySnatched,
                     moveBackDown,
@@ -146,108 +172,145 @@ class Spider {
             }
         }
     }
-      
+    
+    func showArrows(at attackTarget: CGPoint){
+        if let arrowsSprite = self.arrowsSprite, let arrowsFrames = self.arrowsFrames, let spiderFrameHeight = self.entity?.node.frame.height {
+            arrowsSprite.position.x = attackTarget.x
+            arrowsSprite.position.y = 0 + spiderFrameHeight / 2
+            
+            arrowsSprite.isHidden = false
+            
+            let arrowsAnimation = SKAction.animate(with: arrowsFrames, timePerFrame: 1.0 / 4.0)
+            arrowsSprite.run(SKAction.repeatForever(arrowsAnimation))
+            
+            print("showing arrows \(arrowsSprite.position.x), \(arrowsSprite.position.y)")
+        }
+    }
+    
+    func hideArrows(){
+        if let arrowsSprite = self.arrowsSprite {
+            arrowsSprite.isHidden = true
+            arrowsSprite.removeAllActions()
+        }
+    }
+    
     public func start(){
         print("restarting spider atk timer! interval: \(self.attackInterval)")
-
+        
         // Run the timer; doesn't repeat because it restarts itself
         self.attackTimer = Timer.scheduledTimer(timeInterval: self.attackInterval, target: self, selector: #selector(self.attack), userInfo: nil, repeats: false)
     }
-  
+    
     public func stop(){
+        // Hide indicator arrows
+        self.hideArrows()
+        
         if let entity = self.entity {
             // Remove any queued events
             entity.node.removeAllActions()
-           
+            
             // Stop the timer
             if self.attackTimer != nil {
+                print("stopping spider timer...")
+                
                 self.attackTimer!.invalidate()
                 self.attackTimer = nil
             }
         }
     }
- 
+    
     /// Freeze movement
     public func freeze(){
-        // Don't re-run already set state transition
-        if isFrozen {
-            return
-        }
-        
-        // Set frozen state
         if let entity = self.entity {
             entity.node.isPaused = true
-            
-            isFrozen = true
         }
     }
-  
+    
     /// Unfreeze movement
     public func unfreeze(){
-        // Don't re-run already set state transition
-        if !isFrozen {
-            return
-        }
-
         if let entity = self.entity {
             entity.node.isPaused = false
-            
-            isFrozen = false
         }
     }
-  
+    
     /// Forbids the spider from doing anything
     public func forbid(){
-        if let destinationPos = forbiddenPos, let cageSprite = self.cageSprite { // Abort attacks
-            stop()
-           
-            // Place at same lane to pop out from
+        if let destinationPos = forbiddenPos, let cageSprite = self.cageSprite, let node = self.entity?.node { // Abort attacks
+            // State cannot be modified if frozen
+            if node.isPaused {
+                return
+            }
+            
+            // Show forbid sprite
+            cageSprite.isHidden = false
+            
+            // Hide indicator arrows
+            self.hideArrows()
+            
+            // Cancel actions
+            node.removeAllActions()
+            
+            // And stop timer
+            if self.attackTimer != nil {
+                print("stopping spider timer...")
+                
+                self.attackTimer!.invalidate()
+                self.attackTimer = nil
+            }
+            
+            // Move to spot
+            
+            // Move right below screen instantly TODO: Don't do this if already peeking
             if let entityFrameHeight = self.entity?.node.frame.height {
                 self.moveTo(position: CGPoint(x: destinationPos.x, y: -entityFrameHeight), teleport: true)
             }
             
-            // Move to the forbidden pos smoothly
+            // And start moving to the forbidden pos smoothly
             moveTo(position: destinationPos)
-            
-            // Show the cage sprite
-            cageSprite.isHidden = false
         }
     }
-
+    
     /// Gives back the spider permission to attaclk
     public func unforbid(){
-        if let cageSprite = self.cageSprite {
+        if let cageSprite = self.cageSprite, let node = self.entity?.node {
+            // State cannot be modified if frozen
+            if node.isPaused {
+                return
+            }
+            
             // Hide the cage sprite
             cageSprite.isHidden = true
             
+            // Start action timer if inactive
+            if self.attackTimer == nil {
+                self.attackTimer = Timer.scheduledTimer(timeInterval: self.attackInterval, target: self, selector: #selector(self.attack), userInfo: nil, repeats: false)
+            }
+            
             // Move offscreen
             moveOffscreen(shouldDoInstantly: false)
-            
-            // Resume attacks
-            start()
         }
     }
-   
+    
     /// Teleport somewhere
     public func moveTo(position: CGPoint, teleport: Bool = false){
         if self.targetPos == nil {
             return
         }
-       
+        
         if self.entity == nil {
             return
         }
-      
+        
         self.targetPos!.x = position.x
         self.targetPos!.y = position.y
-   
+        
         // Set direct position as well if teleporting
         if teleport {
             self.entity!.node.position.x = self.targetPos!.x
             self.entity!.node.position.y = self.targetPos!.y
         }
     }
-  
+    
     /// Teleport offscreen
     public func moveOffscreen(shouldDoInstantly: Bool = false){
         if let entity = self.entity {
@@ -257,21 +320,24 @@ class Spider {
             ), teleport: shouldDoInstantly)
         }
     }
-
+    
     public func update(with deltaTime: CGFloat){
         // Move using linear interpolation if unfrozen
-        if !isFrozen {
-            if let entity = self.entity, let targetPos = self.targetPos {
-                entity.node.position.x = lerp(entity.node.position.x, targetPos.x, smoothTime * deltaTime)
-                entity.node.position.y = lerp(entity.node.position.y, targetPos.y, smoothTime * deltaTime)
+        if let node = self.entity?.node, let targetPos = self.targetPos {
+            if !node.isPaused {
+                node.position.x = lerp(node.position.x, targetPos.x, smoothTime * deltaTime)
+                node.position.y = lerp(node.position.y, targetPos.y, smoothTime * deltaTime)
             }
+            
+            print("has atk timer: \(self.attackTimer != nil), actions left: \(node.hasActions())")
         }
-       
+        
+        // Make cage stay on top of spider
         if let entity = self.entity {
-            // Make cage stay on top of spider
             if let cage = self.cageSprite {
                 cage.position = entity.node.position
             }
         }
+        
     }
 }

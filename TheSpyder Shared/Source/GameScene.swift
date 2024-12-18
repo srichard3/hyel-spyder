@@ -30,7 +30,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         "car_green" : SKTexture(imageNamed: "car_g"),
         "car_orange" : SKTexture(imageNamed: "car_o"),
         "car_red" : SKTexture(imageNamed: "car_r"),
-        "car_yellow" : SKTexture(imageNamed: "car_y")
+        "car_yellow" : SKTexture(imageNamed: "car_y"),
+        "arrows_0" : SKTexture(imageNamed: "arrows_0"),
+        "arrows_1" : SKTexture(imageNamed: "arrows_1"),
+        "arrows_2" : SKTexture(imageNamed: "arrows_2"),
+        "arrows_3" : SKTexture(imageNamed: "arrows_3")
     ]
   
     var backgroundA: SKSpriteNode?
@@ -217,7 +221,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             scale: globalScale * 0.8,
             texture: textures["player"]!,
             shadow: textures["shadow"]!,
-            smokeParticles: SKEmitterNode(fileNamed: "smoke")!,
+            smokeParticles: SKEmitterNode(fileNamed: "turbo")!,
             target: self,
             startPos: CGPoint(
                 x: view.frame.width / 2,
@@ -239,12 +243,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func configureSpider(){
         if let player = self.player {
+            // Build array of arrow frames
+            let arrowsFrames = [
+                textures["arrows_0"]!,
+                textures["arrows_1"]!,
+                textures["arrows_2"]!,
+                textures["arrows_3"]!
+            ]
+            
             // Need at least 1 attack target; means player lanes must be initialized first!
             if !player.lanes.isEmpty {
                 Spider.shared.configure(
                     scale: globalScale,
                     texture: textures["spider"]!,
                     cageTexture: textures["forbidden"]!,
+                    arrowsFrames: arrowsFrames,
                     attackTargets: player.lanes,
                     targetScene: self
                 )
@@ -310,9 +323,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 player.recenter()
                 player.isFrozen = false // TODO: Make player use similar freezing protocol to spider
 
-                Spider.shared.stop()
                 Spider.shared.moveOffscreen(shouldDoInstantly: true)
-                Spider.shared.unfreeze()
 
                 Spawner.shared.stop()
                 Spawner.shared.clear()
@@ -327,6 +338,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 titleCard.isHidden = true
                 beginLabel.isHidden = true
                 
+                Spider.shared.unfreeze()
                 Spider.shared.start()
                 
                 Spawner.shared.start()
@@ -341,7 +353,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
                 player.isFrozen = true
                 Spider.shared.freeze()
-                
+
                 SpeedKeeper.shared.freeze()
 
                 ScoreKeeper.shared.hideLabel()

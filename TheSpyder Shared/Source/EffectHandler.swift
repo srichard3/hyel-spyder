@@ -8,6 +8,7 @@ class EffectHandler {
     var timer: Timer?
     var activeEffectOverlays = Dictionary<GameObjectType, SKSpriteNode>()
     var indicatorLabel: SKLabelNode?
+    var indicatorLabelBg = Array<SKLabelNode>()
   
     private var labelIsHidden = true
     private var targetLabelPos: CGPoint?
@@ -32,10 +33,10 @@ class EffectHandler {
         // Set up label node
         self.indicatorLabel = SKLabelNode()
         if let label = self.indicatorLabel {
-            print("made fx label")
+            print("made main fx label")
             
             label.fontName = labelFontName
-            label.fontColor = UIColor(cgColor: CGColor(gray: 0.8, alpha: 1))
+            label.fontColor = UIColor(cgColor: CGColor(red: 240 / 255, green: 189 / 255, blue: 22 / 255, alpha: 1))
             label.fontSize = 16
             label.zPosition = CGFloat(GameObjectType.gui.rawValue)
             label.position = CGPoint(
@@ -43,16 +44,32 @@ class EffectHandler {
                 y: ScoreKeeper.shared.label.position.y - 40 // 30 is magic number
             )
            
-            // Also set target pos with normal pos
+            // Also set target lerp pos from normal pos
             self.targetLabelPos = CGPoint(
                 x: label.position.x,
                 y: label.position.y
             )
             
             targetScene.addChild(label)
+            
+            // Now set up backing labels
+            // Note that the position offsets will be applied in the lerp function since that's what moves it
+            for _ in 0..<4 {
+                let newBgLabel = label.copy() as! SKLabelNode
+              
+                // They are all gray to give dark contrast
+                newBgLabel.fontColor = UIColor(cgColor: CGColor(gray: 0.1, alpha: 1))
+                newBgLabel.zPosition -= 1
+                
+                self.indicatorLabelBg.append(newBgLabel)
+                
+                targetScene.addChild(newBgLabel)
+            }
         } else {
-            print("did not make fx label")
+            print("did not make main fx label")
         }
+        
+        print("have \(self.indicatorLabelBg.count) bg fx labels")
     }
    
     // Call these when we want the label instantly gone (game over screen, etc.)
@@ -60,10 +77,18 @@ class EffectHandler {
         if let label = self.indicatorLabel {
             label.isHidden = true
         }
+       
+        for label in self.indicatorLabelBg {
+            label.isHidden = true
+        }
     }
    
     public func enableLabel(){
         if let label = self.indicatorLabel {
+            label.isHidden = false
+        }
+       
+        for label in self.indicatorLabelBg {
             label.isHidden = false
         }
     }
@@ -78,9 +103,25 @@ class EffectHandler {
             }
               
             let smoothTime = 7.5
-            
+           
+            // Move normal label
             label.position.x = lerp(label.position.x, targetLabelPos.x, smoothTime * deltaTime)
             label.position.y = lerp(label.position.y, targetLabelPos.y, smoothTime * deltaTime)
+           
+            // Move BG labels
+            let offset = label.fontSize / 6
+
+            // First make their position match the main label's
+            for bgLabel in self.indicatorLabelBg {
+                bgLabel.position.x = label.position.x
+                bgLabel.position.y = label.position.y
+            }
+           
+            // And then apply directional offset to each
+            self.indicatorLabelBg[0].position.x += offset
+            self.indicatorLabelBg[1].position.x -= offset
+            self.indicatorLabelBg[2].position.y += offset
+            self.indicatorLabelBg[3].position.y -= offset
         }
     }
     
@@ -110,7 +151,13 @@ class EffectHandler {
                 }
                 
                 // The resulting text should look like "PowerUp1 + PowerUp2" instead of "PowerUp! + PowerUp2 + "
+                
+                // Note we need to update both fg label and bg labels
                 label.text = labelText
+
+                for label in self.indicatorLabelBg {
+                    label.text = labelText
+                }
             // If no effects, hide the label; don't update the text since we'd just hide it if we did that
             } else {
                 labelIsHidden = true

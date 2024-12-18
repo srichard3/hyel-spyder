@@ -18,6 +18,7 @@
 				Fonts/font.ttf,
 				Particles/glint.sks,
 				Particles/smoke.sks,
+				Particles/turbo.sks,
 				Sounds/attack.mp3,
 				Sounds/crash.mp3,
 				Sounds/hide.mp3,

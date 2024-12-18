@@ -50,8 +50,6 @@ class Entity{
             entityShadow.zPosition = CGFloat(GameObjectType.shadow.rawValue)
             
             node.addChild(entityShadow)
-            
-            print("\(entityShadow.frame.width)")
         }
     }
 

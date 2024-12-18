@@ -11,12 +11,11 @@ class Spawner{
     private var spawnIntervalDecrement = 0.05
   
     private var spawnChoiceTable = Array<GameObjectType>()
-    private let powerupSpawnBoost = 5
     private var spawnWeights: Dictionary<GameObjectType, Int> = [
         .car : 95,
-        .horn : 1 * 5,
-        .drink : 2 * 500,
-        .freshener : 1 * 500
+        .horn : 1,
+        .drink : 2,
+        .freshener : 1
     ]
 
     private var cars = Array<Car>()
