@@ -35,7 +35,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
   
     var backgroundA: SKSpriteNode?
     var backgroundB: SKSpriteNode?
-
+    var backgroundC: SKSpriteNode?
+    var backgroundD: SKSpriteNode?
+    
     var titleCard: SKSpriteNode?
     var gameOverCard: SKSpriteNode?
     var beginLabel: SKLabelNode?
@@ -166,24 +168,45 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
    
     func configureBackgrounds(using view: SKView){
-        // Setup background A
+        // Configure an initial background
         self.backgroundA = SKSpriteNode(texture: textures["background"])
-        if let backgroundA = self.backgroundA  {
+        if let backgroundA = self.backgroundA {
             backgroundA.setScale(globalScale)
+            backgroundA.anchorPoint = CGPoint(x: 0.5, y: 0) // Anchor at midbottom
             backgroundA.zPosition = CGFloat(GameObjectType.background.rawValue)
             backgroundA.position = CGPoint(
-                x: view.frame.width / 2,
-                y: view.frame.height / 2
+                x: view.frame.midX,
+                y: view.frame.minY
             )
            
             addChild(backgroundA)
-           
-            // From background A, set up background B
+            
+            // Configure rest of backgrounds based off this one
             self.backgroundB = backgroundA.copy() as? SKSpriteNode
-            if let backgroundB = self.backgroundB {
-                backgroundB.position.y = backgroundA.position.y + backgroundA.size.height
+            self.backgroundC = backgroundA.copy() as? SKSpriteNode
+            self.backgroundD = backgroundA.copy() as? SKSpriteNode
+
+            if let backgroundB = self.backgroundB, let backgroundC = self.backgroundC, let backgroundD = self.backgroundD {
+                backgroundB.position = CGPoint(
+                    x: view.frame.midX,
+                    y: backgroundA.frame.minY - backgroundA.frame.height
+                )
                
                 addChild(backgroundB)
+                
+                backgroundC.position = CGPoint(
+                    x: view.frame.midX,
+                    y: backgroundA.frame.minY + backgroundA.frame.height * 2
+                )
+               
+                addChild(backgroundC)
+                
+                backgroundD.position = CGPoint(
+                    x: view.frame.midX,
+                    y: backgroundA.frame.minY + backgroundA.frame.height
+                )
+                    
+                addChild(backgroundD)
             }
         }
     }
@@ -331,26 +354,40 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
 
-    func scrollBackground(){
-        if let backgroundA = self.backgroundA, let backgroundB = self.backgroundB {
+    func scrollBackground(using view: SKView){
+        if let backgroundA = self.backgroundA, let backgroundB = self.backgroundB, let backgroundC = self.backgroundC, let backgroundD = self.backgroundD {
+            let tpTop = view.frame.minY + view.frame.height * 2 // Where background will teleport to once offscreen
+            let tpBottom = view.frame.minY - view.frame.height // Where background will teleport from once offscreen
+            
             let dy = CGFloat(SpeedKeeper.shared.getSpeed()) * deltaTime // Velocity increment of background
             
-            // Move to bottom until off-screen, move to top and restart
+            // Move all towards bottom
             backgroundA.position.y -= dy
             backgroundB.position.y -= dy
-           
-            if backgroundA.position.y <= -backgroundA.size.height / 2 {
-                backgroundA.position.y = backgroundB.position.y + backgroundB.size.height - dy
+            backgroundC.position.y -= dy
+            backgroundD.position.y -= dy
+          
+            // Teleport to top if hit bottom
+            if backgroundA.position.y <= tpBottom {
+                backgroundA.position.y = tpTop - (tpBottom - backgroundA.position.y)
             }
 
-            if backgroundB.position.y <= -backgroundB.size.height / 2 {
-                backgroundB.position.y = backgroundA.position.y + backgroundA.size.height - dy
+            if backgroundB.position.y <= tpBottom {
+                backgroundB.position.y = tpTop - (tpBottom - backgroundB.position.y)
+            }
+           
+            if backgroundC.position.y <= tpBottom {
+                backgroundC.position.y = tpTop - (tpBottom - backgroundC.position.y)
+            }
+            
+            if backgroundD.position.y <= tpBottom {
+                backgroundD.position.y = tpTop - (tpBottom - backgroundD.position.y)
             }
         }
     }
    
-    func runGameLogic(){
-        scrollBackground()
+    func runGameLogic(using view: SKView){
+        scrollBackground(using: view)
          
         if let player = self.player {
             player.update(with: deltaTime)
@@ -476,7 +513,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
         deltaTime = currentTime - lastUpdateTime as CGFloat // MARK: This starts tweaking when we've left the app for a long time; set it correctly in some sort of callback?
 
-        runGameLogic()
+        if let view = self.view {
+            runGameLogic(using: view)
+        }
         
         lastUpdateTime = currentTime
     }
