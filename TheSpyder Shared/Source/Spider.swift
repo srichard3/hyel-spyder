@@ -328,8 +328,6 @@ class Spider {
                 node.position.x = lerp(node.position.x, targetPos.x, smoothTime * deltaTime)
                 node.position.y = lerp(node.position.y, targetPos.y, smoothTime * deltaTime)
             }
-            
-            print("has atk timer: \(self.attackTimer != nil), actions left: \(node.hasActions())")
         }
         
         // Make cage stay on top of spider

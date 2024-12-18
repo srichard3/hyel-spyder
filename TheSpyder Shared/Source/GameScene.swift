@@ -323,6 +323,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 player.recenter()
                 player.isFrozen = false // TODO: Make player use similar freezing protocol to spider
 
+                Spider.shared.unfreeze()
                 Spider.shared.moveOffscreen(shouldDoInstantly: true)
 
                 Spawner.shared.stop()
@@ -338,7 +339,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 titleCard.isHidden = true
                 beginLabel.isHidden = true
                 
-                Spider.shared.unfreeze()
                 Spider.shared.start()
                 
                 Spawner.shared.start()
@@ -352,6 +352,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 beginLabel.isHidden = true
 
                 player.isFrozen = true
+                
+                Spider.shared.stop()
                 Spider.shared.freeze()
 
                 SpeedKeeper.shared.freeze()
