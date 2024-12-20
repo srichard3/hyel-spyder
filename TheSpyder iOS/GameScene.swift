@@ -46,7 +46,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var gameOverCard: SKSpriteNode?
     var beginLabel: SKLabelNode?
     
-    var player: Player?
+    var player: TSPlayer?
    
     var swipeLeft: UISwipeGestureRecognizer?
     var swipeRight: UISwipeGestureRecognizer?
@@ -217,7 +217,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
    
     func configurePlayer(using view: SKView){
         // Initialize player
-        self.player = Player(
+        self.player = TSPlayer(
             scale: globalScale * 0.8,
             texture: textures["player"]!,
             shadow: textures["shadow"]!,
