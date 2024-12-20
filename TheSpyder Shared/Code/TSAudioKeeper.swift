@@ -1,7 +1,7 @@
 import SpriteKit
 
-class AudioHandler {
-    static let shared = AudioHandler()
+class TSAudioKeeper {
+    static let shared = TSAudioKeeper()
     
     /// Play swipe sound async to avoid lagspike, use for general SFX
     public func playSoundAsync(_ sound: String, target: SKNode){

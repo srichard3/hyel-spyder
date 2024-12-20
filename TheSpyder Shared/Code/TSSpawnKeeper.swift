@@ -1,8 +1,8 @@
 import SpriteKit
 
 /// Handle car spawning
-class Spawner{
-    public static let shared = Spawner()
+class TSSpawnKeeper{
+    public static let shared = TSSpawnKeeper()
 
     private var targetScene: SKScene?
     
@@ -10,25 +10,25 @@ class Spawner{
     private var spawnInterval = 0.75
     private var spawnIntervalDecrement = 0.05
   
-    private var spawnChoiceTable = Array<GameObjectType>()
-    private var spawnWeights: Dictionary<GameObjectType, Int> = [
+    private var spawnChoiceTable = Array<TSGameObjectType>()
+    private var spawnWeights: Dictionary<TSGameObjectType, Int> = [
         .car : 95,
         .horn : 1,
         .drink : 2,
         .freshener : 1
     ]
 
-    private var cars = Array<Car>()
+    private var cars = Array<TSCar>()
     private var possibleCars: [SKTexture]?
     private var possibleLanes: [CGPoint]?
     private var carShadowTexture: SKTexture?
     private var carScale = 1.0
   
-    private var powerups = Array<Powerup>()
-    private var powerupTextures: Dictionary<GameObjectType, SKTexture>?
+    private var powerups = Array<TSPowerup>()
+    private var powerupTextures: Dictionary<TSGameObjectType, SKTexture>?
     private var powerupScale = 1.0
     
-    public func configure(targetScene: SKScene, possibleCars: [SKTexture], possibleLanes: [CGPoint], powerupTextures: Dictionary<GameObjectType, SKTexture>, carShadow: SKTexture?, carScale: CGFloat){
+    public func configure(targetScene: SKScene, possibleCars: [SKTexture], possibleLanes: [CGPoint], powerupTextures: Dictionary<TSGameObjectType, SKTexture>, carShadow: SKTexture?, carScale: CGFloat){
         self.targetScene = targetScene
         self.possibleCars = possibleCars
         self.possibleLanes = possibleLanes
@@ -72,28 +72,28 @@ class Spawner{
             let randomItem = spawnChoiceTable[Int.random(in: 0..<spawnChoiceTable.count)]
         
             // We will either spawn a car...
-            if randomItem == GameObjectType.car {
+            if randomItem == TSGameObjectType.car {
                 let chosenCarTexture: SKTexture = possibleCars![Int.random(in: 0..<possibleCars!.count)]
-                let newCar = Car(
+                let newCar = TSCar(
                     scale: self.carScale,
                     texture: chosenCarTexture,
                     shadow: carShadowTexture,
                     target: scene,
                     startPos: CGPoint(x: chosenLane.x, y: scene.frame.height + chosenCarTexture.size().height * carScale),
-                    startVel: CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
+                    startVel: CGVector(dx: 0, dy: -TSSpeedKeeper.shared.getCarSpeed())
                 )
                 
                 cars.append(newCar)
             // Or a powerup
             } else {
                 let chosenPowerupTexture = powerupTextures![randomItem]
-                let newPowerup = Powerup(
+                let newPowerup = TSPowerup(
                     scale: self.carScale,
                     texture: chosenPowerupTexture!,
                     target: scene,
                     type: randomItem,
                     startPos: CGPoint(x: chosenLane.x, y: scene.frame.height + chosenPowerupTexture!.size().height * carScale),
-                    startVel: CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
+                    startVel: CGVector(dx: 0, dy: -TSSpeedKeeper.shared.getCarSpeed())
                 )
                 
                 powerups.append(newPowerup)
@@ -154,7 +154,7 @@ class Spawner{
     }
   
     /// Removes a powerup specified by its own object
-    public func removePowerup(target: Powerup){
+    public func removePowerup(target: TSPowerup){
         var i = 0
         while i < powerups.count {
             let currentPowerup = powerups[i]
@@ -184,7 +184,7 @@ class Spawner{
                 // Otherwise, update it only
                 } else {
                     // Make cars respond to velocity changes in real time
-                    currentCar.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
+                    currentCar.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -TSSpeedKeeper.shared.getCarSpeed())
                     
                     i = i + 1
                 }
@@ -200,7 +200,7 @@ class Spawner{
                     currentPowerup.entity.removeFromTarget()
                     powerups.remove(at: i)
                 } else {
-                    currentPowerup.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -SpeedKeeper.shared.getCarSpeed())
+                    currentPowerup.entity.node.physicsBody?.velocity = CGVector(dx: 0, dy: -TSSpeedKeeper.shared.getCarSpeed())
                     i += 1
                 }
             }

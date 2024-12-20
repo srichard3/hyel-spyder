@@ -1,7 +1,7 @@
 import SpriteKit
 import GameplayKit
 
-enum GameObjectType: UInt32 {
+enum TSGameObjectType: UInt32 {
     case background = 0
     case shadow = 1
     case car = 2
@@ -13,17 +13,12 @@ enum GameObjectType: UInt32 {
     case gui = 8
 }
 
-/// Simple linear interpolation
-func lerp(_ start: CGFloat, _ end: CGFloat, _ t: CGFloat) -> CGFloat{
-    return (1 - t) * start + t * end
-}
-
-class Entity{
-    public var type: GameObjectType
+class TSEntity{
+    public var type: TSGameObjectType
     public var node: SKSpriteNode
     public var shadow: SKSpriteNode?
 
-    init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, type: GameObjectType, startPos: CGPoint = CGPoint(x: 0, y: 0), startRotation: CGFloat = 0){
+    init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, type: TSGameObjectType, startPos: CGPoint = CGPoint(x: 0, y: 0), startRotation: CGFloat = 0){
         self.type = type
        
         // Setup body node
@@ -39,7 +34,7 @@ class Entity{
         node.physicsBody?.isDynamic = true
         node.physicsBody?.collisionBitMask = 0
         node.physicsBody?.categoryBitMask = type.rawValue
-        node.physicsBody?.contactTestBitMask = Entity.contactTestFor(type)
+        node.physicsBody?.contactTestBitMask = TSEntity.contactTestFor(type)
 
         target.addChild(node)
 
@@ -47,24 +42,24 @@ class Entity{
         self.shadow = SKSpriteNode(texture: shadow) // A shadow may not be given!
         if let entityShadow = self.shadow {
             entityShadow.alpha = 0.2
-            entityShadow.zPosition = CGFloat(GameObjectType.shadow.rawValue)
+            entityShadow.zPosition = CGFloat(TSGameObjectType.shadow.rawValue)
             
             node.addChild(entityShadow)
         }
     }
 
     /// Get the appropriate contact test bitmask of the given game object type
-    public static func contactTestFor(_ type: GameObjectType) -> UInt32 {
+    public static func contactTestFor(_ type: TSGameObjectType) -> UInt32 {
         switch type {
         case .player:
-            return GameObjectType.car.rawValue | GameObjectType.spider.rawValue
+            return TSGameObjectType.car.rawValue | TSGameObjectType.spider.rawValue
         default:
             return 0
         }
     }
    
     /// Get the category bitmask of a game object type
-    public static func categoryBitmaskOf(_ type: GameObjectType) -> UInt32 {
+    public static func categoryBitmaskOf(_ type: TSGameObjectType) -> UInt32 {
         return type.rawValue
     }
     

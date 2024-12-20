@@ -1,17 +1,17 @@
 import SpriteKit
 
-class Car{
-    var entity: Entity
+class TSCar{
+    var entity: TSEntity
     var smokeParticles: SKEmitterNode
     
     init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0), startVel: CGVector = CGVector(dx: 0, dy: 0)){
         // Set up entity
-        self.entity = Entity(
+        self.entity = TSEntity(
             scale: scale,
             texture: texture,
             shadow: shadow,
             target: target,
-            type: GameObjectType.car,
+            type: TSGameObjectType.car,
             startPos: startPos
         )
         

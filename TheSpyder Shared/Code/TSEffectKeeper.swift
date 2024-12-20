@@ -1,25 +1,25 @@
 import SpriteKit
 
-class EffectHandler {
-    static let shared = EffectHandler()
+class TSEffectKeeper {
+    static let shared = TSEffectKeeper()
 
     var targetScene: SKScene?
     var overlayTexture: SKTexture?
     var timer: Timer?
-    var activeEffectOverlays = Dictionary<GameObjectType, SKSpriteNode>()
+    var activeEffectOverlays = Dictionary<TSGameObjectType, SKSpriteNode>()
     var indicatorLabel: SKLabelNode?
     var indicatorLabelBg = Array<SKLabelNode>()
   
     private var labelIsHidden = true
     private var targetLabelPos: CGPoint?
     
-    var tooltips: Dictionary<GameObjectType, String> = [
+    var tooltips: Dictionary<TSGameObjectType, String> = [
         .freshener: "Spider Blocked",
         .drink: "Slowed Down"
         // No tooltip for horn since it flashes too quickly, but they can figure it out!
     ]
 
-    var overlayColors: Dictionary<GameObjectType, CGColor> = [
+    var overlayColors: Dictionary<TSGameObjectType, CGColor> = [
         .horn: CGColor(gray: 1, alpha: 1),
         .freshener: CGColor(red: 240 / 255, green: 53 / 255,  blue: 53 / 255 , alpha: 0.5),
         .drink: CGColor(red: 0.318, green: 0.694, blue: 0.427, alpha: 0.5)
@@ -38,10 +38,10 @@ class EffectHandler {
             label.fontName = labelFontName
             label.fontColor = UIColor(cgColor: CGColor(red: 240 / 255, green: 189 / 255, blue: 22 / 255, alpha: 1))
             label.fontSize = 16
-            label.zPosition = CGFloat(GameObjectType.gui.rawValue)
+            label.zPosition = CGFloat(TSGameObjectType.gui.rawValue)
             label.position = CGPoint(
-                x: ScoreKeeper.shared.label.position.x,
-                y: ScoreKeeper.shared.label.position.y - 40 // 30 is magic number
+                x: TSScoreKeeper.shared.label.position.x,
+                y: TSScoreKeeper.shared.label.position.y - 40 // 30 is magic number
             )
            
             // Also set target lerp pos from normal pos
@@ -105,8 +105,8 @@ class EffectHandler {
             let smoothTime = 7.5
            
             // Move normal label
-            label.position.x = lerp(label.position.x, targetLabelPos.x, smoothTime * deltaTime)
-            label.position.y = lerp(label.position.y, targetLabelPos.y, smoothTime * deltaTime)
+            label.position.x = TSMath.lerp(label.position.x, targetLabelPos.x, smoothTime * deltaTime)
+            label.position.y = TSMath.lerp(label.position.y, targetLabelPos.y, smoothTime * deltaTime)
            
             // Move BG labels
             let offset = label.fontSize / 6
@@ -183,7 +183,7 @@ class EffectHandler {
             
             // It should also be right above the background
             // It looks cooler when overlay only affects road :)
-            overlaySprite.zPosition = CGFloat(GameObjectType.background.rawValue) + 1
+            overlaySprite.zPosition = CGFloat(TSGameObjectType.background.rawValue) + 1
             
             // Add to scene
             scene.addChild(overlaySprite)
@@ -195,7 +195,7 @@ class EffectHandler {
     }
    
     /// Show an overlay for a specific duration, with fade-in and fade-out
-    func runEffect(for type: GameObjectType){
+    func runEffect(for type: TSGameObjectType){
         // If the passed effect is already running, re-run it
         // The easiest way to do this is just to restart the effect altogether
         if activeEffectOverlays.keys.contains(type) {
@@ -277,25 +277,25 @@ class EffectHandler {
     }
    
     /// Apply the powerup's effect
-    func setEffect(for type: GameObjectType){
+    func setEffect(for type: TSGameObjectType){
         // Set the actual effect
         switch type {
         case .horn:
             print("blanking!")
 
             // Stop spawning stuff for a bit
-            Spawner.shared.stop()
-            Spawner.shared.clearCars()
+            TSSpawnKeeper.shared.stop()
+            TSSpawnKeeper.shared.clearCars()
         case.freshener:
             print("forbidding spider!")
             
             // Forbid the spider
-            Spider.shared.forbid()
+            TSSpider.shared.forbid()
         case .drink:
             print("slowing down!")
             
             // Slow down
-            SpeedKeeper.shared.startSpeedOverride(speed: 400)
+            TSSpeedKeeper.shared.startSpeedOverride(speed: 400)
         default:
             print("no effect")
         }
@@ -305,23 +305,23 @@ class EffectHandler {
     }
    
     /// De-apply the powerup's effect
-    func unsetEffect(for type: GameObjectType) {
+    func unsetEffect(for type: TSGameObjectType) {
         switch type {
         case .horn:
             print("resuming spawns!")
             
             // Allow new spawns
-            Spawner.shared.start()
+            TSSpawnKeeper.shared.start()
         case.freshener:
             print("spider active again!")
             
             // Spider can attack again
-            Spider.shared.unforbid()
+            TSSpider.shared.unforbid()
         case .drink:
             print("restoring speed!")
             
             // Restore old speed
-            SpeedKeeper.shared.stopSpeedOverride()
+            TSSpeedKeeper.shared.stopSpeedOverride()
         default:
             print("nothing to restore")
         }
@@ -342,7 +342,7 @@ class EffectHandler {
         }
     }
 
-    func removeEffect(_ effect: GameObjectType){
+    func removeEffect(_ effect: TSGameObjectType){
         // Remove effect overlay
         if  let removedEffect = activeEffectOverlays.removeValue(forKey: effect) {
             removedEffect.removeAllActions()
@@ -353,7 +353,7 @@ class EffectHandler {
         updateIndicatorLabel();
     }
    
-    func restartEffect(_ effect: GameObjectType) {
+    func restartEffect(_ effect: TSGameObjectType) {
         if let activeOverlay = self.activeEffectOverlays[effect] {
             // Remove remaining actions for this effect
             activeOverlay.removeAllActions()

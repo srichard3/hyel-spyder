@@ -127,7 +127,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.titleCard = SKSpriteNode(texture: textures["title"]!)
         if let titleCard = self.titleCard {
             titleCard.setScale(globalScale * titleCardScale)
-            titleCard.zPosition = CGFloat(GameObjectType.gui.rawValue)
+            titleCard.zPosition = CGFloat(TSGameObjectType.gui.rawValue)
             titleCard.position = CGPoint(
                 x: view.frame.midX,
                 y: view.frame.midY + titleCard.frame.height / 2
@@ -151,7 +151,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             beginLabel.fontName = "FFF Forward"
             beginLabel.fontSize = 16
             beginLabel.fontColor = UIColor(cgColor: CGColor(gray: 0.8, alpha: 1))
-            beginLabel.zPosition = CGFloat(GameObjectType.gui.rawValue)
+            beginLabel.zPosition = CGFloat(TSGameObjectType.gui.rawValue)
             beginLabel.position = CGPoint(x: frame.midX, y: beginLabelYPos)
 
             addChild(beginLabel)
@@ -161,7 +161,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.gameOverCard = SKSpriteNode(texture: textures["game_over"]!)
         if let gameOverCard = self.gameOverCard {
             gameOverCard.setScale(globalScale * 0.2)
-            gameOverCard.zPosition = CGFloat(GameObjectType.gui.rawValue)
+            gameOverCard.zPosition = CGFloat(TSGameObjectType.gui.rawValue)
             gameOverCard.position = CGPoint(
                 x: view.frame.midX,
                 y: view.frame.midY + gameOverCard.frame.height / 2 // Position slightly above the middle
@@ -177,7 +177,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if let backgroundA = self.backgroundA {
             backgroundA.setScale(globalScale)
             backgroundA.anchorPoint = CGPoint(x: 0.5, y: 0) // Anchor at midbottom
-            backgroundA.zPosition = CGFloat(GameObjectType.background.rawValue)
+            backgroundA.zPosition = CGFloat(TSGameObjectType.background.rawValue)
             backgroundA.position = CGPoint(
                 x: view.frame.midX,
                 y: view.frame.minY
@@ -253,7 +253,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             // Need at least 1 attack target; means player lanes must be initialized first!
             if !player.lanes.isEmpty {
-                Spider.shared.configure(
+                TSSpider.shared.configure(
                     scale: globalScale,
                     texture: textures["spider"]!,
                     cageTexture: textures["forbidden"]!,
@@ -266,12 +266,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
    
     func configureScoreKeeper(){
-        ScoreKeeper.shared.configureLabel(self)
+        TSScoreKeeper.shared.configureLabel(self)
     }
    
     func configureSpawner(){
         // Organize powerup and car textures for spawner to draw from
-        let powerupTextures: Dictionary<GameObjectType, SKTexture> = [
+        let powerupTextures: Dictionary<TSGameObjectType, SKTexture> = [
             .freshener : textures["freshener"]!,
             .drink : textures["drink"]!,
             .horn : textures["horn"]!
@@ -286,7 +286,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // Setup spawner
         if let player = self.player {
-            Spawner.shared.configure(
+            TSSpawnKeeper.shared.configure(
                 targetScene: self,
                 possibleCars: carTextures,
                 possibleLanes: player.lanes,
@@ -298,7 +298,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
    
     func configureEffectHandler(using scene: SKScene){
-        EffectHandler.shared.configure(
+        TSEffectKeeper.shared.configure(
             overlay: textures["blank"]!,
             labelFontName: "FFF Forward",
             targetScene: scene
@@ -323,29 +323,29 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 player.recenter()
                 player.isFrozen = false // TODO: Make player use similar freezing protocol to spider
 
-                Spider.shared.unfreeze()
-                Spider.shared.moveOffscreen(shouldDoInstantly: true)
+                TSSpider.shared.unfreeze()
+                TSSpider.shared.moveOffscreen(shouldDoInstantly: true)
 
-                Spawner.shared.stop()
-                Spawner.shared.clear()
+                TSSpawnKeeper.shared.stop()
+                TSSpawnKeeper.shared.clear()
 
-                ScoreKeeper.shared.reset()
-                ScoreKeeper.shared.hideLabel()
+                TSScoreKeeper.shared.reset()
+                TSScoreKeeper.shared.hideLabel()
 
-                SpeedKeeper.shared.reset()
-                SpeedKeeper.shared.unfreeze()
+                TSSpeedKeeper.shared.reset()
+                TSSpeedKeeper.shared.unfreeze()
             case .inGame:
                 gameOverCard.isHidden = true
                 titleCard.isHidden = true
                 beginLabel.isHidden = true
                 
-                Spider.shared.start()
+                TSSpider.shared.start()
                 
-                Spawner.shared.start()
+                TSSpawnKeeper.shared.start()
                 
-                ScoreKeeper.shared.start()
-                ScoreKeeper.shared.unhideLabel()
-                EffectHandler.shared.enableLabel()
+                TSScoreKeeper.shared.start()
+                TSScoreKeeper.shared.unhideLabel()
+                TSEffectKeeper.shared.enableLabel()
             case.gameOver:
                 gameOverCard.isHidden = false
                 titleCard.isHidden = true
@@ -353,17 +353,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
                 player.isFrozen = true
                 
-                Spider.shared.stop()
-                Spider.shared.freeze()
+                TSSpider.shared.stop()
+                TSSpider.shared.freeze()
 
-                SpeedKeeper.shared.freeze()
+                TSSpeedKeeper.shared.freeze()
 
-                ScoreKeeper.shared.hideLabel()
+                TSScoreKeeper.shared.hideLabel()
                 
-                Spawner.shared.stop()
+                TSSpawnKeeper.shared.stop()
                 
-                EffectHandler.shared.cleanup()
-                EffectHandler.shared.disableLabel()
+                TSEffectKeeper.shared.cleanup()
+                TSEffectKeeper.shared.disableLabel()
             }
         }
     }
@@ -373,7 +373,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let tpTop = view.frame.minY + view.frame.height * 2 // Where background will teleport to once offscreen
             let tpBottom = view.frame.minY - view.frame.height // Where background will teleport from once offscreen
             
-            let dy = CGFloat(SpeedKeeper.shared.getSpeed()) * deltaTime // Velocity increment of background
+            let dy = CGFloat(TSSpeedKeeper.shared.getSpeed()) * deltaTime // Velocity increment of background
             
             // Move all towards bottom
             backgroundA.position.y -= dy
@@ -405,10 +405,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
          
         if let player = self.player {
             player.update(with: deltaTime)
-            Spider.shared.update(with: deltaTime)
-            Spawner.shared.update()
-            SpeedKeeper.shared.update()
-            EffectHandler.shared.update(with: deltaTime)
+            TSSpider.shared.update(with: deltaTime)
+            TSSpawnKeeper.shared.update()
+            TSSpeedKeeper.shared.update()
+            TSEffectKeeper.shared.update(with: deltaTime)
         }
     }
 
@@ -445,29 +445,29 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
             
             // Game loss case
-            if otherBody.categoryBitMask == Entity.categoryBitmaskOf(.car) || otherBody.categoryBitMask == Entity.categoryBitmaskOf(.spider) {
+            if otherBody.categoryBitMask == TSEntity.categoryBitmaskOf(.car) || otherBody.categoryBitMask == TSEntity.categoryBitmaskOf(.spider) {
                 setGameState(to: .gameOver)
                 playTremblingHaptic()
-                AudioHandler.shared.playSoundAsync("crash", target: self)
+                TSAudioKeeper.shared.playSoundAsync("crash", target: self)
             // Powerup collect case
             } else {
                 // Run powerup effect
                 switch otherBody.categoryBitMask {
-                    case Entity.categoryBitmaskOf(.freshener):
-                        EffectHandler.shared.runEffect(for: .freshener)
-                    case Entity.categoryBitmaskOf(.horn):
-                        EffectHandler.shared.runEffect(for: .horn)
-                    case Entity.categoryBitmaskOf(.drink):
-                        EffectHandler.shared.runEffect(for: .drink)
+                    case TSEntity.categoryBitmaskOf(.freshener):
+                        TSEffectKeeper.shared.runEffect(for: .freshener)
+                    case TSEntity.categoryBitmaskOf(.horn):
+                        TSEffectKeeper.shared.runEffect(for: .horn)
+                    case TSEntity.categoryBitmaskOf(.drink):
+                        TSEffectKeeper.shared.runEffect(for: .drink)
                     default:
                         break
                 }
                     
                 // Play collection SFX
-                AudioHandler.shared.playSoundAsync("powerup", target: self)
+                TSAudioKeeper.shared.playSoundAsync("powerup", target: self)
                 
                 // Remove the powerup
-                Spawner.shared.removePowerup(with: otherBody.node as! SKSpriteNode)
+                TSSpawnKeeper.shared.removePowerup(with: otherBody.node as! SKSpriteNode)
             }
         }
     }
@@ -483,7 +483,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         hapticFeedback.impactOccurred()
 
         // Play sound effect
-        AudioHandler.shared.playSoundAsync("switch", target: self)
+        TSAudioKeeper.shared.playSoundAsync("switch", target: self)
         
         // Cannot swipe in gameover, need to tap
         if gameState == .gameOver {

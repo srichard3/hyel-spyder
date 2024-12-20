@@ -1,8 +1,8 @@
 import SpriteKit
 
 /// Keeps track of the game speed
-class SpeedKeeper{
-    static let shared = SpeedKeeper()
+class TSSpeedKeeper{
+    static let shared = TSSpeedKeeper()
 
     var speed = 600
     var overriddenSpeed = 600
@@ -60,14 +60,14 @@ class SpeedKeeper{
     /// Update the speed based on given score
     public func update(){
         // If current score exceeds speedup threshold, increase game speed and score multiplier
-        if ScoreKeeper.shared.score >= scoreUntilSpeedup {
+        if TSScoreKeeper.shared.score >= scoreUntilSpeedup {
             
             speed += speedupAmount
             scoreUntilSpeedup += scoreUntilSpeedupIncrement
             
-            Spawner.shared.decrementSpawnInterval()
+            TSSpawnKeeper.shared.decrementSpawnInterval()
             
-            ScoreKeeper.shared.multiplier += ScoreKeeper.shared.multiplierIncrement
+            TSScoreKeeper.shared.multiplier += TSScoreKeeper.shared.multiplierIncrement
         }
     }
 
@@ -77,6 +77,6 @@ class SpeedKeeper{
         speed = 600
         scoreUntilSpeedup = 50
         
-        Spawner.shared.resetSpawnInterval()
+        TSSpawnKeeper.shared.resetSpawnInterval()
     }
 }

@@ -1,12 +1,12 @@
 import SpriteKit
 
-class Powerup{
-    var entity: Entity
+class TSPowerup{
+    var entity: TSEntity
     var particleEffect: SKEmitterNode
     
-    init(scale: CGFloat, texture: SKTexture, target: SKScene, type: GameObjectType, startPos: CGPoint = CGPoint(x: 0, y: 0), startVel: CGVector = CGVector(dx: 0, dy: 0)){
+    init(scale: CGFloat, texture: SKTexture, target: SKScene, type: TSGameObjectType, startPos: CGPoint = CGPoint(x: 0, y: 0), startVel: CGVector = CGVector(dx: 0, dy: 0)){
         // Set up entity
-        self.entity = Entity(
+        self.entity = TSEntity(
             scale: scale,
             texture: texture,
             shadow: nil,

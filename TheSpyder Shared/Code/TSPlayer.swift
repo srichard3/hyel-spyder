@@ -1,7 +1,7 @@
 import SpriteKit
 
-class Player{
-    var entity: Entity
+class TSPlayer{
+    var entity: TSEntity
     var lanes = Array<CGPoint>()
     var lane: Int = 0
 
@@ -16,7 +16,7 @@ class Player{
     
     init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, smokeParticles: SKEmitterNode, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
         // Set up entity
-        self.entity = Entity(scale: scale, texture: texture, shadow: shadow, target: target, type: GameObjectType.player, startPos: startPos)
+        self.entity = TSEntity(scale: scale, texture: texture, shadow: shadow, target: target, type: TSGameObjectType.player, startPos: startPos)
        
         // Use precise collision
         self.entity.node.physicsBody?.usesPreciseCollisionDetection = true
@@ -109,12 +109,12 @@ class Player{
         targetPos.x = lanes[lane].x
         targetPos.y = lanes[lane].y
         
-        entity.node.position.x = lerp(entity.node.position.x, targetPos.x, smoothTime * deltaTime)
-        entity.node.position.y = lerp(entity.node.position.y, targetPos.y, smoothTime * deltaTime)
+        entity.node.position.x = TSMath.lerp(entity.node.position.x, targetPos.x, smoothTime * deltaTime)
+        entity.node.position.y = TSMath.lerp(entity.node.position.y, targetPos.y, smoothTime * deltaTime)
        
         // Add some rotation
         let xDistanceToLane: CGFloat = lanes[lane].x - entity.node.position.x
-        entity.node.zRotation = lerp(entity.node.zRotation, -xDistanceToLane * 0.0125, smoothTime * deltaTime)
+        entity.node.zRotation = TSMath.lerp(entity.node.zRotation, -xDistanceToLane * 0.0125, smoothTime * deltaTime)
     }
 
     public func update(with deltaTime: CGFloat){
@@ -123,7 +123,7 @@ class Player{
         }
         
         // Make smoke particles respond to game speed
-        let particleSpeed = self.baseSmokeParticleSpeed * CGFloat(SpeedKeeper.shared.getSpeed()) * 0.01 // The last factor is eyeballed
+        let particleSpeed = self.baseSmokeParticleSpeed * CGFloat(TSSpeedKeeper.shared.getSpeed()) * 0.01 // The last factor is eyeballed
         smokeParticles.particleSpeed = particleSpeed
     }
 }

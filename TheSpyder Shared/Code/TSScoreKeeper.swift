@@ -1,8 +1,8 @@
 import SpriteKit
 
 /// Singleton; keeps track of the player's score
-class ScoreKeeper{
-    static let shared = ScoreKeeper()
+class TSScoreKeeper{
+    static let shared = TSScoreKeeper()
    
     var targetScene: SKScene?
     
@@ -40,7 +40,7 @@ class ScoreKeeper{
         self.label.fontName = "FFF Forward" // Use the name of the font, not the file name
         self.label.fontColor = UIColor(cgColor: CGColor(gray: 0.8, alpha: 1))
         self.label.fontSize = 32
-        self.label.zPosition = CGFloat(GameObjectType.gui.rawValue)
+        self.label.zPosition = CGFloat(TSGameObjectType.gui.rawValue)
      
         // Add to target scene
         target.addChild(self.label)

@@ -1,11 +1,11 @@
 import SpriteKit
 
-class Spider {
-    static let shared = Spider()
+class TSSpider {
+    static let shared = TSSpider()
     
     private var targetScene: SKScene?
     
-    private var entity: Entity?
+    private var entity: TSEntity?
     private var cageSprite: SKSpriteNode?
     private var arrowsSprite: SKSpriteNode?
     private var arrowsFrames: [SKTexture]?
@@ -28,12 +28,12 @@ class Spider {
         let startPos = CGPoint(x: 0, y: -texture.size().height * scale)
         
         // Set up entity
-        self.entity = Entity(
+        self.entity = TSEntity(
             scale: scale,
             texture: texture,
             shadow: nil,
             target: targetScene,
-            type: GameObjectType.spider,
+            type: TSGameObjectType.spider,
             startPos: startPos
         )
         
@@ -107,7 +107,7 @@ class Spider {
                     self.moveTo(position: CGPoint(x: attackTarget.x, y: 0))
                     
                     if let scene = self.targetScene {
-                        AudioHandler.shared.playSoundAsync("peek", target: scene)
+                        TSAudioKeeper.shared.playSoundAsync("peek", target: scene)
                     }
                 }
                 
@@ -129,7 +129,7 @@ class Spider {
                     self.moveTo(position: CGPoint(x: attackTarget.x, y: attackTarget.y))
                     
                     if let scene = self.targetScene {
-                        AudioHandler.shared.playSoundAsync("attack", target: scene)
+                        TSAudioKeeper.shared.playSoundAsync("attack", target: scene)
                     }
                 }
                 
@@ -144,7 +144,7 @@ class Spider {
                     }
                     
                     if let scene = self.targetScene {
-                        AudioHandler.shared.playSoundAsync("hide", target: scene)
+                        TSAudioKeeper.shared.playSoundAsync("hide", target: scene)
                     }
                 }
                 
@@ -325,8 +325,8 @@ class Spider {
         // Move using linear interpolation if unfrozen
         if let node = self.entity?.node, let targetPos = self.targetPos {
             if !node.isPaused {
-                node.position.x = lerp(node.position.x, targetPos.x, smoothTime * deltaTime)
-                node.position.y = lerp(node.position.y, targetPos.y, smoothTime * deltaTime)
+                node.position.x = TSMath.lerp(node.position.x, targetPos.x, smoothTime * deltaTime)
+                node.position.y = TSMath.lerp(node.position.y, targetPos.y, smoothTime * deltaTime)
             }
         }
         
