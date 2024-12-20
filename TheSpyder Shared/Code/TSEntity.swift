@@ -13,11 +13,21 @@ enum TSGameObjectType: UInt32 {
     case gui = 8
 }
 
-class TSEntity{
-    public var type: TSGameObjectType
-    public var node: SKSpriteNode
-    public var shadow: SKSpriteNode?
+let smoothTime: CGFloat = 7.5
 
+class TSEntity{
+    private var type: TSGameObjectType
+    private var node: SKSpriteNode
+    private var shadow: SKSpriteNode?
+
+    public func getType() -> TSGameObjectType {
+        return type;
+    }
+   
+    public func getNode() -> SKSpriteNode {
+        return node;
+    }
+   
     init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, type: TSGameObjectType, startPos: CGPoint = CGPoint(x: 0, y: 0), startRotation: CGFloat = 0){
         self.type = type
        
@@ -47,7 +57,7 @@ class TSEntity{
             node.addChild(entityShadow)
         }
     }
-
+    
     /// Get the appropriate contact test bitmask of the given game object type
     public static func contactTestFor(_ type: TSGameObjectType) -> UInt32 {
         switch type {

@@ -1,8 +1,16 @@
 import SpriteKit
 
 class TSCar{
-    var entity: TSEntity
-    var smokeParticles: SKEmitterNode
+    private var entity: TSEntity
+    private var smokeParticles: SKEmitterNode
+  
+    public func getEntity() -> TSEntity {
+        return self.entity
+    }
+    
+    public func getNode() -> SKSpriteNode {
+        return entity.getNode()
+    }
     
     init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0), startVel: CGVector = CGVector(dx: 0, dy: 0)){
         // Set up entity
@@ -14,19 +22,19 @@ class TSCar{
             type: TSGameObjectType.car,
             startPos: startPos
         )
-        
-        // Give initial velocity
-        self.entity.node.physicsBody?.velocity = startVel
-        
+   
         // Setup smoke
         self.smokeParticles = SKEmitterNode(fileNamed: "smoke")!
     
         self.smokeParticles.setScale(0.2) // Not very sure how childed particles work so these are eyeball numbers!
         self.smokeParticles.particleBirthRate /= 2 // Make these spawn less
-            
-        // Position at bottom
-        self.smokeParticles.position.y -= (entity.node.size.height / 2) / entity.node.yScale // Divide by parent scale to undo its effect
-        
-        self.entity.node.addChild(self.smokeParticles)
+        self.smokeParticles.position.y -= (entity.getNode().size.height / 2) / entity.getNode().yScale // Position at bottom; divide by parent scale to factor it out of this positioning!
+
+        self.getNode().addChild(self.smokeParticles)
+
+        // Give physics body initial velocity
+        if let nodePhysicsBody = self.getNode().physicsBody {
+            nodePhysicsBody.velocity = startVel
+        }
     }
 }

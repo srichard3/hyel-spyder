@@ -1,30 +1,48 @@
 import SpriteKit
 
 class TSPlayer{
-    var entity: TSEntity
-    var lanes = Array<CGPoint>()
-    var lane: Int = 0
+    private var entity: TSEntity
+    private var lanes = Array<CGPoint>()
+    private var lane: Int = 0
 
-    let smoothTime: CGFloat
-    var targetPos: CGPoint
-    var targetRot: CGFloat
+    private var targetPos: CGPoint
+    private var targetRot: CGFloat
    
-    var isFrozen = false
+    private var isFrozen = false
     
-    var smokeParticles: SKEmitterNode
-    var baseSmokeParticleSpeed: CGFloat
-    
+    private var smokeParticles: SKEmitterNode
+    private var baseSmokeParticleSpeed: CGFloat
+   
+    public func getNode() -> SKSpriteNode {
+        return self.entity.getNode()
+    }
+
+    public func getLanes() -> [CGPoint] {
+        return self.lanes
+    }
+   
+    public func freeze() {
+        self.isFrozen = true
+    }
+   
+    public func unfreeze() {
+        self.isFrozen = false
+    }
+  
+    public func getFrozen() -> Bool {
+        return self.isFrozen
+    }
+
     init(scale: CGFloat, texture: SKTexture, shadow: SKTexture?, smokeParticles: SKEmitterNode, target: SKScene, startPos: CGPoint = CGPoint(x: 0, y: 0)){
         // Set up entity
         self.entity = TSEntity(scale: scale, texture: texture, shadow: shadow, target: target, type: TSGameObjectType.player, startPos: startPos)
        
         // Use precise collision
-        self.entity.node.physicsBody?.usesPreciseCollisionDetection = true
+        self.entity.getNode().physicsBody?.usesPreciseCollisionDetection = true
  
         // Initialize interpolation movement stuff
-        targetPos = CGPoint(x: 0, y: 0)
-        targetRot = 0
-        smoothTime = 7.5
+        self.targetPos = CGPoint(x: 0, y: 0)
+        self.targetRot = 0
 
         // Setup smoke
         self.smokeParticles = smokeParticles
@@ -36,13 +54,23 @@ class TSPlayer{
         self.smokeParticles.position.y -= 10
         self.smokeParticles.targetNode = target
 
-        self.entity.node.addChild(self.smokeParticles)
+        self.entity.getNode().addChild(self.smokeParticles)
     }
-   
+
+    public func update(with deltaTime: CGFloat){
+        // No modifying state if frozen
+        if self.isFrozen {
+            return
+        }
+
+        self.lerpMove(with: deltaTime) // Must update player position before shadow's position is updated!
+        self.smokeParticles.particleSpeed = self.baseSmokeParticleSpeed * CGFloat(TSSpeedKeeper.shared.getSpeed()) * 0.01 // The last factor is eyeballed
+    }
+
     /// Calculate position points the player can switch to
     public func calculateLanes(scale: CGFloat, offshoot: CGFloat, pad: CGFloat, laneWidth: CGFloat, laneCount: Int){
         // Clear any previous lane info
-        lanes.removeAll();
+        self.lanes.removeAll();
        
         // Compute new lanes
         // Example lane calculations:
@@ -55,53 +83,60 @@ class TSPlayer{
             let t = CGFloat(i)
             
             let laneX = (pad + (t * laneWidth) + (laneWidth / 2 - t)) * scale - offshoot
-            let laneY = self.entity.node.position.y
+            let laneY = self.getNode().position.y
             
-            lanes.append(CGPoint(x: laneX, y: laneY))
+            self.lanes.append(CGPoint(x: laneX, y: laneY))
         }
         
         // Put the player at the middle lane
-        lane = self.lanes.count / 2 as Int
+        self.lane = self.lanes.count / 2 as Int
     }
 
     /// Try to move to the lane in the given direction
     public func changeDirection(to dir: UISwipeGestureRecognizer.Direction){
-        switch dir {
-        case .left:
-            if lane - 1 >= 0 {
-                lane -= 1
-            }
-        case.right:
-            if lane + 1 <= lanes.count - 1 {
-                lane += 1
-            }
-        default:
+        // No modifying state if frozen
+        if self.isFrozen {
             return
+        }
+
+        if dir == .left && self.lane - 1 >= 0 {
+            self.lane -= 1
+        } else if (dir == .right && self.lane + 1 <= self.lanes.count - 1) {
+            self.lane += 1
         }
     }
 
-    /// Resets the player to the centermost lane
-    public func recenter(){
-        if lanes.isEmpty {
+    public func clearState(){
+        // No modifying state if frozen
+        if self.isFrozen {
+            return
+        }
+        
+        if self.lanes.isEmpty {
             return
         }
    
         // Set current lane to centermost
-        lane = lanes.count / 2 as Int
+        self.lane = self.lanes.count / 2 as Int
        
         // Set the target pos to that lane, and clear rotation
-        targetPos.x = lanes[lane].x
-        targetPos.y = lanes[lane].y
-        targetRot = 0
-      
+        self.targetPos.x = self.lanes[lane].x
+        self.targetPos.y = self.lanes[lane].y
+        self.targetRot = 0
+    
         // Sync with transform values for instant reset
-        entity.node.position.x = targetPos.x
-        entity.node.position.y = targetPos.y
-        entity.node.zRotation = 0
+        self.getNode().position.x = targetPos.x
+        self.getNode().position.y = targetPos.y
+        self.getNode().zRotation = 0
     }
     
     /// Move the player node using interpolation instead of its physics body
     private func lerpMove(with deltaTime: CGFloat){
+        // No modifying state if frozen
+        if self.isFrozen {
+            return
+        }
+        
         if lanes.isEmpty {
             return
         }
@@ -109,21 +144,11 @@ class TSPlayer{
         targetPos.x = lanes[lane].x
         targetPos.y = lanes[lane].y
         
-        entity.node.position.x = TSMath.lerp(entity.node.position.x, targetPos.x, smoothTime * deltaTime)
-        entity.node.position.y = TSMath.lerp(entity.node.position.y, targetPos.y, smoothTime * deltaTime)
+        self.getNode().position.x = TSMath.lerp(self.getNode().position.x, targetPos.x, smoothTime * deltaTime)
+        self.getNode().position.y = TSMath.lerp(self.getNode().position.y, targetPos.y, smoothTime * deltaTime)
        
         // Add some rotation
-        let xDistanceToLane: CGFloat = lanes[lane].x - entity.node.position.x
-        entity.node.zRotation = TSMath.lerp(entity.node.zRotation, -xDistanceToLane * 0.0125, smoothTime * deltaTime)
-    }
-
-    public func update(with deltaTime: CGFloat){
-        if !isFrozen {
-            lerpMove(with: deltaTime) // Must update player position before shadow's position is updated!
-        }
-        
-        // Make smoke particles respond to game speed
-        let particleSpeed = self.baseSmokeParticleSpeed * CGFloat(TSSpeedKeeper.shared.getSpeed()) * 0.01 // The last factor is eyeballed
-        smokeParticles.particleSpeed = particleSpeed
+        let xDistanceToLane: CGFloat = lanes[lane].x - self.getNode().position.x
+        self.getNode().zRotation = TSMath.lerp(self.getNode().zRotation, -xDistanceToLane * 0.0125, smoothTime * deltaTime)
     }
 }

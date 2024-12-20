@@ -7,12 +7,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case gameOver
     }
 
-    var gameState: GameState?
+    private var gameIsPaused = false
     
-    var globalScale: CGFloat = 1
+    private var gameState: GameState?
+    private var lastGameState: GameState?
 
-    var lastUpdateTime: TimeInterval = 0
-    var deltaTime: CGFloat = 0
+    private var globalScale: CGFloat = 1
+
+    private var lastUpdateTime: TimeInterval = 0
+
+    private var deltaTime: CGFloat = 0
 
     let textures = [
         "blank" : SKTexture(imageNamed: "blank"),
@@ -53,27 +57,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var tap: UITapGestureRecognizer?
     
     let hapticFeedback = UIImpactFeedbackGenerator(style: .medium)
-
-    // Might want to move this to a dedicated controller...
-    /// Play tremolo/earthquake haptic
-    func playTremblingHaptic(){
-        /*
-        return
-        
-        hapticFeedback.prepare()
-        
-        let pulses = 4 // Play this amount of pulses
-        let pulseDelay = 0.1 // Separated by this amount of time
-       
-        // Schedule all pulses to run at (current time) + (pulseDelay * i) on a background thread
-        for i in 0..<pulses {
-            DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + (pulseDelay * TimeInterval(i))) {
-                // Also make the intensity go down for every pulse
-                self.hapticFeedback.impactOccurred(intensity: 1.0 - (1.0 / CGFloat(pulses)) * CGFloat(i))
-            }
-        }
-        */
-    }
 
     func setGlobalScale(from view: SKView){
         // Fill the screen regardless of anything
@@ -140,7 +123,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         var beginLabelYPos: CGFloat
       
         // Begin label offset is midpoint between player frame top and title card bottom
-        if let playerFrame = self.player?.entity.node.frame, let titleCardFrame = self.titleCard?.frame {
+        if let playerFrame = self.player?.getNode().frame, let titleCardFrame = self.titleCard?.frame {
             beginLabelYPos = playerFrame.maxY + (titleCardFrame.minY - playerFrame.maxY) / 2.0
         } else {
             beginLabelYPos = frame.midY // Fall back to screen center
@@ -160,7 +143,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Setup game over card
         self.gameOverCard = SKSpriteNode(texture: textures["game_over"]!)
         if let gameOverCard = self.gameOverCard {
-            gameOverCard.setScale(globalScale * 0.2)
+            gameOverCard.setScale(globalScale * 0.17)
             gameOverCard.zPosition = CGFloat(TSGameObjectType.gui.rawValue)
             gameOverCard.position = CGPoint(
                 x: view.frame.midX,
@@ -252,13 +235,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             ]
             
             // Need at least 1 attack target; means player lanes must be initialized first!
-            if !player.lanes.isEmpty {
+            if !player.getLanes().isEmpty {
                 TSSpider.shared.configure(
                     scale: globalScale,
                     texture: textures["spider"]!,
                     cageTexture: textures["forbidden"]!,
                     arrowsFrames: arrowsFrames,
-                    attackTargets: player.lanes,
+                    attackTargets: player.getLanes(),
                     targetScene: self
                 )
             }
@@ -289,7 +272,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             TSSpawnKeeper.shared.configure(
                 targetScene: self,
                 possibleCars: carTextures,
-                possibleLanes: player.lanes,
+                possibleLanes: player.getLanes(),
                 powerupTextures: powerupTextures,
                 carShadow: textures["shadow"]!,
                 carScale: globalScale * 0.8
@@ -311,7 +294,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             return
         }
 
-        gameState = state
+        self.lastGameState = self.gameState
+        self.gameState = state
        
         if let gameOverCard = self.gameOverCard, let titleCard = self.titleCard, let beginLabel = self.beginLabel, let player = self.player {
             switch state {
@@ -320,20 +304,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 titleCard.isHidden = false
                 beginLabel.isHidden = false
                 
-                player.recenter()
-                player.isFrozen = false // TODO: Make player use similar freezing protocol to spider
-
+                player.unfreeze()
+                player.clearState()
+                
                 TSSpider.shared.unfreeze()
-                TSSpider.shared.moveOffscreen(shouldDoInstantly: true)
-
-                TSSpawnKeeper.shared.stop()
-                TSSpawnKeeper.shared.clear()
-
-                TSScoreKeeper.shared.reset()
-                TSScoreKeeper.shared.hideLabel()
-
-                TSSpeedKeeper.shared.reset()
+                TSSpider.shared.clearState()
+                
+                TSSpawnKeeper.shared.clearState()
+                
+                TSScoreKeeper.shared.clearState()
+                
                 TSSpeedKeeper.shared.unfreeze()
+                TSSpeedKeeper.shared.clearState()
+                
+                TSEffectKeeper.shared.clearAll()
             case .inGame:
                 gameOverCard.isHidden = true
                 titleCard.isHidden = true
@@ -341,28 +325,29 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 
                 TSSpider.shared.start()
                 
-                TSSpawnKeeper.shared.start()
+                TSSpawnKeeper.shared.startTimer()
                 
-                TSScoreKeeper.shared.start()
-                TSScoreKeeper.shared.unhideLabel()
+                TSScoreKeeper.shared.startTimer()
+                TSScoreKeeper.shared.showLabel()
+                
                 TSEffectKeeper.shared.enableLabel()
             case.gameOver:
                 gameOverCard.isHidden = false
                 titleCard.isHidden = true
                 beginLabel.isHidden = true
-
-                player.isFrozen = true
                 
-                TSSpider.shared.stop()
+                player.freeze()
+                
                 TSSpider.shared.freeze()
-
-                TSSpeedKeeper.shared.freeze()
-
+                
+                TSSpawnKeeper.shared.stopTimer()
+                
+                TSScoreKeeper.shared.stopTimer()
                 TSScoreKeeper.shared.hideLabel()
                 
-                TSSpawnKeeper.shared.stop()
+                TSSpeedKeeper.shared.freeze()
                 
-                TSEffectKeeper.shared.cleanup()
+                TSEffectKeeper.shared.pauseAll()
                 TSEffectKeeper.shared.disableLabel()
             }
         }
@@ -427,8 +412,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let bodyA = contact.bodyA
             let bodyB = contact.bodyB
             
-            let playerIsBodyA = isBody(player.entity.node, which: bodyA)
-            let playerIsBodyB = isBody(player.entity.node, which: bodyB)
+            let playerIsBodyA = isBody(player.getNode(), which: bodyA)
+            let playerIsBodyB = isBody(player.getNode(), which: bodyB)
             
             // If the contact doesn't contain the player, don't process any collision
             if !playerIsBodyA && !playerIsBodyB {
@@ -447,24 +432,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             // Game loss case
             if otherBody.categoryBitMask == TSEntity.categoryBitmaskOf(.car) || otherBody.categoryBitMask == TSEntity.categoryBitmaskOf(.spider) {
                 setGameState(to: .gameOver)
-                playTremblingHaptic()
+                hapticFeedback.impactOccurred(intensity: 1.0)
                 TSAudioKeeper.shared.playSoundAsync("crash", target: self)
             // Powerup collect case
             } else {
                 // Run powerup effect
                 switch otherBody.categoryBitMask {
                     case TSEntity.categoryBitmaskOf(.freshener):
-                        TSEffectKeeper.shared.runEffect(for: .freshener)
+                    TSEffectKeeper.shared.beginEffect(for: .freshener)
                     case TSEntity.categoryBitmaskOf(.horn):
-                        TSEffectKeeper.shared.runEffect(for: .horn)
+                    TSEffectKeeper.shared.beginEffect(for: .horn)
                     case TSEntity.categoryBitmaskOf(.drink):
-                        TSEffectKeeper.shared.runEffect(for: .drink)
+                    TSEffectKeeper.shared.beginEffect(for: .drink)
                     default:
                         break
                 }
                     
                 // Play collection SFX
                 TSAudioKeeper.shared.playSoundAsync("powerup", target: self)
+               
+                // Play haptic
+                hapticFeedback.impactOccurred(intensity: 0.75)
                 
                 // Remove the powerup
                 TSSpawnKeeper.shared.removePowerup(with: otherBody.node as! SKSpriteNode)
@@ -480,7 +468,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
  
     @objc func handleSwipe(_ gesture: UISwipeGestureRecognizer){
         // Play haptic feedback
-        hapticFeedback.impactOccurred()
+        hapticFeedback.impactOccurred(intensity: 0.5)
 
         // Play sound effect
         TSAudioKeeper.shared.playSoundAsync("switch", target: self)
@@ -502,7 +490,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
    
     override func didMove(to view: SKView) {
-        // Configure everything
+        // Configure game components
         setGlobalScale(from: view)
         configurePhysics()
         configureGestureRecognizers(using: view)
@@ -515,17 +503,73 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         configureEffectHandler(using: self)
         configureGUIElements(using: view)
 
+        // Add observers to check if we've left/re-entered the app
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onReturnFromBackground),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+
         // Start at title screen
         setGameState(to: .title)
     }
+  
+    @objc private func onEnterBackground(){
+        // The only situation that's going to cause issues on pause/unpause is when we-re in game
+        if self.gameState == .inGame {
+            if let player = self.player {
+                player.freeze()
+            }
+            
+            TSSpider.shared.freeze()
+           
+            TSSpawnKeeper.shared.stopTimer()
+
+            TSScoreKeeper.shared.stopTimer()
+            
+            TSSpeedKeeper.shared.freeze()
+            
+            TSEffectKeeper.shared.pauseAll()
+        }
+        
+        self.gameIsPaused = true
+    }
    
+    @objc private func onReturnFromBackground(){
+        if self.gameState == .inGame {
+            if let player = self.player {
+                player.unfreeze()
+            }
+            
+            TSSpider.shared.unfreeze()
+           
+            TSSpawnKeeper.shared.startTimer()
+
+            TSScoreKeeper.shared.startTimer()
+            
+            TSSpeedKeeper.shared.unfreeze()
+            
+            TSEffectKeeper.shared.resumeAll()
+        }
+        
+        self.gameIsPaused = false
+    }
+    
     override func update(_ currentTime: TimeInterval) {
         // Avoid very large initial deltaTime
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
         }
     
-        deltaTime = currentTime - lastUpdateTime as CGFloat // MARK: This starts tweaking when we've left the app for a long time; set it correctly in some sort of callback?
+        deltaTime = self.gameIsPaused ? 0 : currentTime - lastUpdateTime as CGFloat
 
         if let view = self.view {
             runGameLogic(using: view)

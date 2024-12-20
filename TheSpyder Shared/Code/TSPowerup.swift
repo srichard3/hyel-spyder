@@ -1,8 +1,16 @@
 import SpriteKit
 
 class TSPowerup{
-    var entity: TSEntity
-    var particleEffect: SKEmitterNode
+    private var entity: TSEntity
+    private var sparkleParticles: SKEmitterNode
+  
+    public func getEntity() -> TSEntity {
+        return self.entity
+    }
+
+    public func getNode() -> SKSpriteNode {
+        return self.entity.getNode()
+    }
     
     init(scale: CGFloat, texture: SKTexture, target: SKScene, type: TSGameObjectType, startPos: CGPoint = CGPoint(x: 0, y: 0), startVel: CGVector = CGVector(dx: 0, dy: 0)){
         // Set up entity
@@ -14,18 +22,18 @@ class TSPowerup{
             type: type,
             startPos: startPos
         )
-        
-        // Give initial velocity
-        self.entity.node.physicsBody?.velocity = startVel
-        
-        // Add particle effect
-        self.particleEffect = SKEmitterNode(fileNamed: "glint")!
 
-        self.particleEffect.setScale(0.2) // Eyeballed
-        
-        // Position at bottom
-        self.particleEffect.position.y -= (entity.node.size.height / 2.0) / entity.node.yScale
+        // Setup particle
+        self.sparkleParticles = SKEmitterNode(fileNamed: "glint")!
+      
+        self.sparkleParticles.setScale(0.2) // Eyeballed
+        self.sparkleParticles.position.y -= (self.getNode().size.height / 2.0) / self.getNode().yScale // Position at bottom
 
-        self.entity.node.addChild(particleEffect)
+        self.entity.getNode().addChild(sparkleParticles)
+
+        // Give physics body start vel
+        if let nodePhysicsBody = self.getNode().physicsBody {
+            nodePhysicsBody.velocity = startVel
+        }
     }
 }

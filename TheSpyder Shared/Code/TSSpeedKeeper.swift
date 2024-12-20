@@ -4,20 +4,31 @@ import SpriteKit
 class TSSpeedKeeper{
     static let shared = TSSpeedKeeper()
 
-    var speed = 600
-    var overriddenSpeed = 600
-    var speedupAmount = 120
-    var scoreUntilSpeedup = 50
-    var scoreUntilSpeedupIncrement = 100
+    private let baseSpeed = 600
+    private var speed = 600 // Should match base value!
+
+    private var overriddenSpeed = 600 // Should initially match base speed!
+    
+    private let speedupAmount = 120
+   
+    private var scoreUntilSpeedup = 50 // Should match base score gain until speedup value!
+    
+    private let baseScoreGainUntilSpeedup = 50
+    private let scoreGainUntilSpeedupIncrement = 50
 
     private var lastSpeedBeforeFreeze = 0
+    
     private var isFrozen = false
     private var isOverridden = false
   
     /// Set a speed value that overrides the current one, allowing a custom speed while the true one still updates in the background
     public func startSpeedOverride(speed: Int){
-        isOverridden = true
-        overriddenSpeed = speed
+        if self.isOverridden {
+            return
+        }
+        
+        self.isOverridden = true
+        self.overriddenSpeed = speed
     }
    
     /// Unset the overridden state, returning normal speed
@@ -60,22 +71,22 @@ class TSSpeedKeeper{
     /// Update the speed based on given score
     public func update(){
         // If current score exceeds speedup threshold, increase game speed and score multiplier
-        if TSScoreKeeper.shared.score >= scoreUntilSpeedup {
+        if TSScoreKeeper.shared.getCurrentScore() >= scoreUntilSpeedup {
+            self.speed += self.speedupAmount
+            self.scoreUntilSpeedup += self.scoreGainUntilSpeedupIncrement
             
-            speed += speedupAmount
-            scoreUntilSpeedup += scoreUntilSpeedupIncrement
+            TSSpawnKeeper.shared.subdivideSpawnInterval()
             
-            TSSpawnKeeper.shared.decrementSpawnInterval()
-            
-            TSScoreKeeper.shared.multiplier += TSScoreKeeper.shared.multiplierIncrement
+            TSScoreKeeper.shared.incrementScoreMultiplier()
         }
     }
 
-    public func reset(){
-        isOverridden = false
-        
-        speed = 600
-        scoreUntilSpeedup = 50
+    public func clearState(){
+        stopSpeedOverride()
+   
+        self.overriddenSpeed = self.baseSpeed
+        self.speed = self.baseSpeed
+        self.scoreUntilSpeedup = self.baseScoreGainUntilSpeedup
         
         TSSpawnKeeper.shared.resetSpawnInterval()
     }

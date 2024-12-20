@@ -3,48 +3,60 @@ import SpriteKit
 class TSEffectKeeper {
     static let shared = TSEffectKeeper()
 
-    var targetScene: SKScene?
-    var overlayTexture: SKTexture?
-    var timer: Timer?
-    var activeEffectOverlays = Dictionary<TSGameObjectType, SKSpriteNode>()
-    var indicatorLabel: SKLabelNode?
-    var indicatorLabelBg = Array<SKLabelNode>()
-  
-    private var labelIsHidden = true
-    private var targetLabelPos: CGPoint?
+    /* Guaranteed Attributes */
     
-    var tooltips: Dictionary<TSGameObjectType, String> = [
+    private var labelIsHidden = true
+    private var targetLabelPos = CGPoint(x: 0, y: 0)
+
+    private var activeEffectOverlays = Dictionary<TSGameObjectType, SKSpriteNode>()
+
+    private let tooltips: Dictionary<TSGameObjectType, String> = [
         .freshener: "Spider Blocked",
         .drink: "Slowed Down"
-        // No tooltip for horn since it flashes too quickly, but they can figure it out!
+        // No tooltip for horn since it flashes too quickly, but what the powerup does is pretty intuitive!
     ]
 
-    var overlayColors: Dictionary<TSGameObjectType, CGColor> = [
+    private let overlayTints: Dictionary<TSGameObjectType, CGColor> = [
         .horn: CGColor(gray: 1, alpha: 1),
         .freshener: CGColor(red: 240 / 255, green: 53 / 255,  blue: 53 / 255 , alpha: 0.5),
         .drink: CGColor(red: 0.318, green: 0.694, blue: 0.427, alpha: 0.5)
-
     ]
+    
+    /* Unknown Attributes */
+    
+    private var targetScene: SKScene?
+   
+    private var overlayTexture: SKTexture?
+    
+    private var label: SKLabelNode?
+    private var labelBg: [SKLabelNode]?
+    
+    private var timer: Timer?
 
     public func configure(overlay: SKTexture, labelFontName: String, targetScene: SKScene){
+        // Feed overlay texture and target scene
         self.overlayTexture = overlay
         self.targetScene = targetScene
 
-        // Set up label node
-        self.indicatorLabel = SKLabelNode()
-        if let label = self.indicatorLabel {
-            print("made main fx label")
-            
+        // Set up label
+        self.label = SKLabelNode()
+        if let label = self.label {
             label.fontName = labelFontName
             label.fontColor = UIColor(cgColor: CGColor(red: 240 / 255, green: 189 / 255, blue: 22 / 255, alpha: 1))
             label.fontSize = 16
-            label.zPosition = CGFloat(TSGameObjectType.gui.rawValue)
-            label.position = CGPoint(
-                x: TSScoreKeeper.shared.label.position.x,
-                y: TSScoreKeeper.shared.label.position.y - 40 // 30 is magic number
-            )
            
-            // Also set target lerp pos from normal pos
+            // Set position based on score label
+            label.position = CGPoint(x: 0, y: 0)
+            if let scoreLabelPos = TSScoreKeeper.shared.getLabelPosition() {
+                label.position = CGPoint(
+                    x: scoreLabelPos.x,
+                    y: scoreLabelPos.y - 40 // 30 is magic number
+                )
+            }
+            
+            label.zPosition = CGFloat(TSGameObjectType.gui.rawValue)
+           
+            // Set target lerp pos from normal pos
             self.targetLabelPos = CGPoint(
                 x: label.position.x,
                 y: label.position.y
@@ -52,81 +64,93 @@ class TSEffectKeeper {
             
             targetScene.addChild(label)
             
+            print("made main fx label")
+
             // Now set up backing labels
-            // Note that the position offsets will be applied in the lerp function since that's what moves it
+            // Note that the position offsets will be applied in the lerp function
+            if self.labelBg != nil {
+                self.labelBg!.removeAll()
+            } else {
+                self.labelBg = []
+            }
+            
             for _ in 0..<4 {
                 let newBgLabel = label.copy() as! SKLabelNode
               
                 // They are all gray to give dark contrast
                 newBgLabel.fontColor = UIColor(cgColor: CGColor(gray: 0.1, alpha: 1))
                 newBgLabel.zPosition -= 1
-                
-                self.indicatorLabelBg.append(newBgLabel)
-                
+            
                 targetScene.addChild(newBgLabel)
+
+                self.labelBg!.append(newBgLabel)
             }
+            
+            print("have \(self.labelBg!.count) bg fx labels")
         } else {
             print("did not make main fx label")
         }
-        
-        print("have \(self.indicatorLabelBg.count) bg fx labels")
     }
    
     // Call these when we want the label instantly gone (game over screen, etc.)
     public func disableLabel(){
-        if let label = self.indicatorLabel {
+        if let label = self.label {
             label.isHidden = true
         }
-       
-        for label in self.indicatorLabelBg {
-            label.isHidden = true
+      
+        if let bgLabels = self.labelBg {
+            for bgLabel in bgLabels {
+                bgLabel.isHidden = true
+            }
         }
     }
    
     public func enableLabel(){
-        if let label = self.indicatorLabel {
+        if let label = self.label {
             label.isHidden = false
         }
-       
-        for label in self.indicatorLabelBg {
-            label.isHidden = false
+      
+        if let bgLabels = self.labelBg {
+            for bgLabel in bgLabels {
+                bgLabel.isHidden = false
+            }
         }
     }
     
     public func update(with deltaTime: CGFloat){
         // Lerp label to its pos, which is determined by its shown state
-        if let label = self.indicatorLabel, var targetLabelPos = self.targetLabelPos {
+        if let label = self.label {
             if labelIsHidden {
                 targetLabelPos.x = -label.frame.width
             } else if let targetSceneView = self.targetScene?.view {
                 targetLabelPos.x = targetSceneView.frame.midX
             }
               
-            let smoothTime = 7.5
-           
             // Move normal label
             label.position.x = TSMath.lerp(label.position.x, targetLabelPos.x, smoothTime * deltaTime)
             label.position.y = TSMath.lerp(label.position.y, targetLabelPos.y, smoothTime * deltaTime)
            
             // Move BG labels
-            let offset = label.fontSize / 6
+            if let bgLabels = self.labelBg {
+                let offset = label.fontSize / 6
 
-            // First make their position match the main label's
-            for bgLabel in self.indicatorLabelBg {
-                bgLabel.position.x = label.position.x
-                bgLabel.position.y = label.position.y
+                // First make their position match the main label's
+                for bgLabel in bgLabels {
+                    bgLabel.position.x = label.position.x
+                    bgLabel.position.y = label.position.y
+                }
+               
+                // And then apply directional offset to each
+                bgLabels[0].position.x += offset
+                bgLabels[1].position.x -= offset
+                bgLabels[2].position.y += offset
+                bgLabels[3].position.y -= offset
             }
-           
-            // And then apply directional offset to each
-            self.indicatorLabelBg[0].position.x += offset
-            self.indicatorLabelBg[1].position.x -= offset
-            self.indicatorLabelBg[2].position.y += offset
-            self.indicatorLabelBg[3].position.y -= offset
         }
     }
     
     private func updateIndicatorLabel(){
-        if let label = self.indicatorLabel {
+        if let label = self.label {
             // Should only update label if effects are left
             if !self.activeEffectOverlays.isEmpty {
                 // Ensure label is shown
@@ -154,9 +178,11 @@ class TSEffectKeeper {
                 
                 // Note we need to update both fg label and bg labels
                 label.text = labelText
-
-                for label in self.indicatorLabelBg {
-                    label.text = labelText
+               
+                if let bgLabels = self.labelBg {
+                    for bgLabel in bgLabels {
+                        bgLabel.text = labelText
+                    }
                 }
             // If no effects, hide the label; don't update the text since we'd just hide it if we did that
             } else {
@@ -195,7 +221,7 @@ class TSEffectKeeper {
     }
    
     /// Show an overlay for a specific duration, with fade-in and fade-out
-    func runEffect(for type: TSGameObjectType){
+    public func beginEffect(for type: TSGameObjectType){
         // If the passed effect is already running, re-run it
         // The easiest way to do this is just to restart the effect altogether
         if activeEffectOverlays.keys.contains(type) {
@@ -204,7 +230,7 @@ class TSEffectKeeper {
         }
        
         // Decide overlay color
-        let color = overlayColors[type]!
+        let color = overlayTints[type]!
 
         if let overlaySprite = spawnOverlay(color: color) {
             // Decide durations for everything
@@ -237,7 +263,7 @@ class TSEffectKeeper {
             let stayDuration: TimeInterval = {
                 switch type {
                 case .freshener:
-                    return 10
+                    return TSSpider.shared.getAttackInterval() / 2
                 case .horn:
                     return 0
                 case .drink:
@@ -277,14 +303,14 @@ class TSEffectKeeper {
     }
    
     /// Apply the powerup's effect
-    func setEffect(for type: TSGameObjectType){
+    private func setEffect(for type: TSGameObjectType){
         // Set the actual effect
         switch type {
         case .horn:
             print("blanking!")
 
             // Stop spawning stuff for a bit
-            TSSpawnKeeper.shared.stop()
+            TSSpawnKeeper.shared.stopTimer()
             TSSpawnKeeper.shared.clearCars()
         case.freshener:
             print("forbidding spider!")
@@ -305,13 +331,13 @@ class TSEffectKeeper {
     }
    
     /// De-apply the powerup's effect
-    func unsetEffect(for type: TSGameObjectType) {
+    private func unsetEffect(for type: TSGameObjectType) {
         switch type {
         case .horn:
             print("resuming spawns!")
             
             // Allow new spawns
-            TSSpawnKeeper.shared.start()
+            TSSpawnKeeper.shared.startTimer()
         case.freshener:
             print("spider active again!")
             
@@ -330,19 +356,19 @@ class TSEffectKeeper {
         updateIndicatorLabel()
     }
    
-    func pauseAll(){
+    public func pauseAll(){
         for overlay in activeEffectOverlays.values {
             overlay.isPaused = true
         }
     }
     
-    func unpauseAll(){
+    public func resumeAll(){
         for overlay in activeEffectOverlays.values {
             overlay.isPaused = false
         }
     }
 
-    func removeEffect(_ effect: TSGameObjectType){
+    public func removeEffect(_ effect: TSGameObjectType){
         // Remove effect overlay
         if  let removedEffect = activeEffectOverlays.removeValue(forKey: effect) {
             removedEffect.removeAllActions()
@@ -353,7 +379,7 @@ class TSEffectKeeper {
         updateIndicatorLabel();
     }
    
-    func restartEffect(_ effect: TSGameObjectType) {
+    public func restartEffect(_ effect: TSGameObjectType) {
         if let activeOverlay = self.activeEffectOverlays[effect] {
             // Remove remaining actions for this effect
             activeOverlay.removeAllActions()
@@ -405,7 +431,7 @@ class TSEffectKeeper {
         }
     }
     
-    func cleanup(){
+    public func clearAll(){
         // Remove all overlay entries
         for overlay in activeEffectOverlays.values {
             overlay.removeAllActions()
