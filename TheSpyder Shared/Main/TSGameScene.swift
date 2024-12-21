@@ -19,26 +19,26 @@ class TSGameScene: SKScene, SKPhysicsContactDelegate {
     private var deltaTime: CGFloat = 0
 
     let textures = [
-        "blank" : SKTexture(imageNamed: "blank"),
-        "cage" : SKTexture(imageNamed: "cage"),
-        "forbidden" : SKTexture(imageNamed: "forbidden"),
-        "background" : SKTexture(imageNamed: "road"),
-        "title" : SKTexture(imageNamed: "logo"),
-        "game_over" : SKTexture(imageNamed: "game_over"),
-        "player" : SKTexture(imageNamed: "player"),
-        "spider" : SKTexture(imageNamed: "spider"),
-        "shadow" : SKTexture(imageNamed: "shadow"),
-        "horn" : SKTexture(imageNamed: "honk"),
-        "drink" : SKTexture(imageNamed: "drink"),
-        "freshener" : SKTexture(imageNamed: "freshener"),
-        "car_green" : SKTexture(imageNamed: "car_g"),
-        "car_orange" : SKTexture(imageNamed: "car_o"),
-        "car_red" : SKTexture(imageNamed: "car_r"),
-        "car_yellow" : SKTexture(imageNamed: "car_y"),
-        "arrows_0" : SKTexture(imageNamed: "arrows_0"),
-        "arrows_1" : SKTexture(imageNamed: "arrows_1"),
-        "arrows_2" : SKTexture(imageNamed: "arrows_2"),
-        "arrows_3" : SKTexture(imageNamed: "arrows_3")
+        "blank" : SKTexture(imageNamed: "TS_blank"),
+        "cage" : SKTexture(imageNamed: "TS_cage"),
+        "forbidden" : SKTexture(imageNamed: "TS_forbidden"),
+        "background" : SKTexture(imageNamed: "TS_road"),
+        "title" : SKTexture(imageNamed: "TS_logo"),
+        "game_over" : SKTexture(imageNamed: "TS_game_over"),
+        "player" : SKTexture(imageNamed: "TS_player"),
+        "spider" : SKTexture(imageNamed: "TS_spider"),
+        "shadow" : SKTexture(imageNamed: "TS_shadow"),
+        "horn" : SKTexture(imageNamed: "TS_honk"),
+        "drink" : SKTexture(imageNamed: "TS_drink"),
+        "freshener" : SKTexture(imageNamed: "TS_freshener"),
+        "car_green" : SKTexture(imageNamed: "TS_car_g"),
+        "car_orange" : SKTexture(imageNamed: "TS_car_o"),
+        "car_red" : SKTexture(imageNamed: "TS_car_r"),
+        "car_yellow" : SKTexture(imageNamed: "TS_car_y"),
+        "arrows_0" : SKTexture(imageNamed: "TS_arrows_0"),
+        "arrows_1" : SKTexture(imageNamed: "TS_arrows_1"),
+        "arrows_2" : SKTexture(imageNamed: "TS_arrows_2"),
+        "arrows_3" : SKTexture(imageNamed: "TS_arrows_3")
     ]
   
     var backgroundA: SKSpriteNode?
@@ -146,7 +146,7 @@ class TSGameScene: SKScene, SKPhysicsContactDelegate {
         
         self.beginLabel = SKLabelNode(text: "Swipe to Begin!")
         if let beginLabel = self.beginLabel {
-            beginLabel.fontName = "FFF Forward"
+            beginLabel.fontName = "FFFForward"
             beginLabel.fontSize = 16
             beginLabel.fontColor = UIColor(cgColor: CGColor(gray: 0.8, alpha: 1))
             beginLabel.zPosition = CGFloat(TSGameObjectType.gui.rawValue)
@@ -219,7 +219,7 @@ class TSGameScene: SKScene, SKPhysicsContactDelegate {
             scale: globalScale * 0.8,
             texture: textures["player"]!,
             shadow: textures["shadow"]!,
-            smokeParticles: SKEmitterNode(fileNamed: "turbo")!,
+            smokeParticles: SKEmitterNode(fileNamed: "TS_turbo")!,
             target: self,
             startPos: CGPoint(
                 x: view.frame.width / 2,
@@ -298,7 +298,7 @@ class TSGameScene: SKScene, SKPhysicsContactDelegate {
     private func configureEffectHandler(using scene: SKScene){
         TSEffectKeeper.shared.configure(
             overlay: textures["blank"]!,
-            labelFontName: "FFF Forward",
+            labelFontName: "FFFForward",
             targetScene: scene
         )
     }

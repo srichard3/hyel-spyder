@@ -24,7 +24,7 @@ class TSCar{
         )
    
         // Setup smoke
-        self.smokeParticles = SKEmitterNode(fileNamed: "smoke")!
+        self.smokeParticles = SKEmitterNode(fileNamed: "TS_smoke")!
     
         self.smokeParticles.setScale(0.2) // Not very sure how childed particles work so these are eyeball numbers!
         self.smokeParticles.particleBirthRate /= 2 // Make these spawn less

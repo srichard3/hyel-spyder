@@ -24,7 +24,7 @@ class TSPowerup{
         )
 
         // Setup particle
-        self.sparkleParticles = SKEmitterNode(fileNamed: "glint")!
+        self.sparkleParticles = SKEmitterNode(fileNamed: "TS_glint")!
       
         self.sparkleParticles.setScale(0.2) // Eyeballed
         self.sparkleParticles.position.y -= (self.getNode().size.height / 2.0) / self.getNode().yScale // Position at bottom

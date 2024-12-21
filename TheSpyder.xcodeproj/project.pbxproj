@@ -16,16 +16,16 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets/Assets.xcassets,
-				Assets/Fonts/font.ttf,
-				Assets/Particles/glint.sks,
-				Assets/Particles/smoke.sks,
-				Assets/Particles/turbo.sks,
-				Assets/Sounds/attack.mp3,
-				Assets/Sounds/crash.mp3,
-				Assets/Sounds/hide.mp3,
-				Assets/Sounds/peek.mp3,
-				Assets/Sounds/powerup.wav,
-				Assets/Sounds/switch.mp3,
+				Assets/Fonts/TS_font.ttf,
+				Assets/Particles/TS_glint.sks,
+				Assets/Particles/TS_smoke.sks,
+				Assets/Particles/TS_turbo.sks,
+				Assets/Sounds/TS_attack.mp3,
+				Assets/Sounds/TS_crash.mp3,
+				Assets/Sounds/TS_hide.mp3,
+				Assets/Sounds/TS_peek.mp3,
+				Assets/Sounds/TS_powerup.wav,
+				Assets/Sounds/TS_switch.mp3,
 				Base/Dependencies.swift,
 				Base/GameContext.swift,
 				Base/GameModeType.swift,
@@ -187,7 +187,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 54C56N7XB2;
+				DEVELOPMENT_TEAM = R87PB9Z683;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "TheSpyder-iOS-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
@@ -220,7 +220,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 54C56N7XB2;
+				DEVELOPMENT_TEAM = R87PB9Z683;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "TheSpyder-iOS-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
