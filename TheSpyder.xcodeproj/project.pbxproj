@@ -34,9 +34,7 @@
 				Code/TSCar.swift,
 				Code/TSEffectKeeper.swift,
 				Code/TSEntity.swift,
-				Code/TSGameContext.swift,
 				Code/TSGameInfo.swift,
-				Code/TSGameScene.swift,
 				Code/TSLayoutInfo.swift,
 				Code/TSMath.swift,
 				Code/TSPlayer.swift,
@@ -45,8 +43,10 @@
 				Code/TSSpawnKeeper.swift,
 				Code/TSSpeedKeeper.swift,
 				Code/TSSpider.swift,
-				Test/ContentView.swift,
-				Test/TestApp.swift,
+				Main/ContentView.swift,
+				Main/TestApp.swift,
+				Main/TSGameContext.swift,
+				Main/TSGameScene.swift,
 			);
 			target = 053C70622CCE68FE0093D173 /* TheSpyder iOS */;
 		};
@@ -187,7 +187,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R87PB9Z683;
+				DEVELOPMENT_TEAM = 54C56N7XB2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "TheSpyder-iOS-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
@@ -220,7 +220,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R87PB9Z683;
+				DEVELOPMENT_TEAM = 54C56N7XB2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "TheSpyder-iOS-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
