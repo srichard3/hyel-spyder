@@ -8,6 +8,8 @@ class TSScoreKeeper{
     
     private var baseScoreAward = 5
     private var score = 0
+    private var lastScore = 0
+    private var highScore = 0
    
     private let baseAwardInterval = 1.0
     private var awardInterval = 1.0 // Should match base value!
@@ -43,11 +45,19 @@ class TSScoreKeeper{
     public func getCurrentScore() -> Int {
         return self.score
     }
+  
+    public func getLastScore() -> Int {
+        return self.lastScore
+    }
    
+    public func getHighScore() -> Int {
+        return self.highScore
+    }
+    
     public func getLabelPosition() -> CGPoint? {
         return self.label?.position
     }
-    
+   
     public func configureLabel(_ target: SKScene){
         // Make values match base
         awardInterval = baseAwardInterval
@@ -128,7 +138,17 @@ class TSScoreKeeper{
             }
         }
     }
-    
+  
+    public func keepScore() {
+        // Set last score and reset current one
+        self.lastScore = self.score
+        
+        // Evaluate high score
+        if self.lastScore > self.highScore {
+            self.highScore = self.lastScore
+        }
+    }
+
     @objc func addScore(){
         score += Int(CGFloat(baseScoreAward) * multiplier)
 

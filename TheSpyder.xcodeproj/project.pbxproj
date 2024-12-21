@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		0512F1332D16556D009BE702 /* Test.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Test.xcodeproj; sourceTree = "<group>"; };
 		053C70632CCE68FE0093D173 /* TheSpyder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TheSpyder.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -33,6 +34,10 @@
 				Code/TSCar.swift,
 				Code/TSEffectKeeper.swift,
 				Code/TSEntity.swift,
+				Code/TSGameContext.swift,
+				Code/TSGameInfo.swift,
+				Code/TSGameScene.swift,
+				Code/TSLayoutInfo.swift,
 				Code/TSMath.swift,
 				Code/TSPlayer.swift,
 				Code/TSPowerup.swift,
@@ -40,6 +45,8 @@
 				Code/TSSpawnKeeper.swift,
 				Code/TSSpeedKeeper.swift,
 				Code/TSSpider.swift,
+				Test/ContentView.swift,
+				Test/TestApp.swift,
 			);
 			target = 053C70622CCE68FE0093D173 /* TheSpyder iOS */;
 		};
@@ -52,11 +59,6 @@
 				053C70742CCE68FE0093D173 /* Exceptions for "TheSpyder Shared" folder in "TheSpyder iOS" target */,
 			);
 			path = "TheSpyder Shared";
-			sourceTree = "<group>";
-		};
-		053C70652CCE68FE0093D173 /* TheSpyder iOS */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "TheSpyder iOS";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -72,11 +74,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0512F1352D16556D009BE702 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		053C70552CCE68FD0093D173 = {
 			isa = PBXGroup;
 			children = (
 				053C705A2CCE68FD0093D173 /* TheSpyder Shared */,
-				053C70652CCE68FE0093D173 /* TheSpyder iOS */,
 				053C70642CCE68FE0093D173 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -103,9 +111,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				053C70652CCE68FE0093D173 /* TheSpyder iOS */,
 			);
 			name = "TheSpyder iOS";
 			packageProductDependencies = (
@@ -141,6 +146,12 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 053C70642CCE68FE0093D173 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 0512F1352D16556D009BE702 /* Products */;
+					ProjectRef = 0512F1332D16556D009BE702 /* Test.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				053C70622CCE68FE0093D173 /* TheSpyder iOS */,

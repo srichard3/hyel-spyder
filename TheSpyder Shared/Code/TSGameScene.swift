@@ -1,16 +1,16 @@
 import SpriteKit
 
-class GameScene: SKScene, SKPhysicsContactDelegate {
-    enum GameState {
-        case title
-        case inGame
-        case gameOver
-    }
+class TSGameScene: SKScene, SKPhysicsContactDelegate {
+    //
+    
+    weak var context: TSGameContext?
+   
+    //
 
     private var gameIsPaused = false
     
-    private var gameState: GameState?
-    private var lastGameState: GameState?
+    private var gameState: TTGameState?
+    private var lastGameState: TTGameState?
 
     private var globalScale: CGFloat = 1
 
@@ -58,7 +58,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     let hapticFeedback = UIImpactFeedbackGenerator(style: .medium)
 
-    func setGlobalScale(from view: SKView){
+    //
+    
+    init(context: TSGameContext, size: CGSize){
+        self.context = context
+        super.init(size: size)
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+  
+    func prepareGameContext(){
+        guard let context else {
+            return
+        }
+        
+        context.scene = self
+    }
+    
+    //
+    
+    private func setGlobalScale(from view: SKView){
         // Fill the screen regardless of anything
         self.scaleMode = .aspectFill
         
@@ -69,13 +90,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         globalScale = max(xScaleFactor, yScaleFactor)
     }
    
-    func configurePhysics(){
+    private func configurePhysics(){
         self.physicsWorld.contactDelegate = self // Make contact tests take place in this scene
         self.physicsWorld.gravity = CGVector(dx: 0, dy: 0) // Remove gravity
     }
    
     /// Sets up left, right, and tap gesture recognizers
-    func configureGestureRecognizers(using view: SKView){
+    private func configureGestureRecognizers(using view: SKView){
         self.swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:))) // The _: effectively makes it so the recognizer passes itself into HandleSwipe
         if let swipeLeft = self.swipeLeft {
             swipeLeft.direction = .left
@@ -97,13 +118,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
    
     /// Make textures all resize as nearest neighbor
-    func configureTextures(){
+    private func configureTextures(){
         for texture in textures.values {
             texture.filteringMode = .nearest
         }
     }
    
-    func configureGUIElements(using view: SKView){
+    private func configureGUIElements(using view: SKView){
         // Setup title card
         let titleCardScale = 0.2
         
@@ -154,7 +175,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
    
-    func configureBackgrounds(using view: SKView){
+    private func configureBackgrounds(using view: SKView){
         // Configure an initial background
         self.backgroundA = SKSpriteNode(texture: textures["background"])
         if let backgroundA = self.backgroundA {
@@ -198,7 +219,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
    
-    func configurePlayer(using view: SKView){
+    private func configurePlayer(using view: SKView){
         // Initialize player
         self.player = TSPlayer(
             scale: globalScale * 0.8,
@@ -224,7 +245,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    func configureSpider(){
+    private func configureSpider(){
         if let player = self.player {
             // Build array of arrow frames
             let arrowsFrames = [
@@ -248,11 +269,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
    
-    func configureScoreKeeper(){
+    private func configureScoreKeeper(){
         TSScoreKeeper.shared.configureLabel(self)
     }
    
-    func configureSpawner(){
+    private func configureSpawner(){
         // Organize powerup and car textures for spawner to draw from
         let powerupTextures: Dictionary<TSGameObjectType, SKTexture> = [
             .freshener : textures["freshener"]!,
@@ -280,7 +301,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
    
-    func configureEffectHandler(using scene: SKScene){
+    private func configureEffectHandler(using scene: SKScene){
         TSEffectKeeper.shared.configure(
             overlay: textures["blank"]!,
             labelFontName: "FFF Forward",
@@ -288,7 +309,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         )
     }
     
-    func setGameState(to state: GameState){
+    private func setGameState(to state: TTGameState){
         // Prevent resetting
         if state == gameState {
             return
@@ -331,7 +352,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 TSScoreKeeper.shared.showLabel()
                 
                 TSEffectKeeper.shared.enableLabel()
-            case.gameOver:
+            case .gameOver:
                 gameOverCard.isHidden = false
                 titleCard.isHidden = true
                 beginLabel.isHidden = true
@@ -341,19 +362,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 TSSpider.shared.freeze()
                 
                 TSSpawnKeeper.shared.stopTimer()
-                
+               
                 TSScoreKeeper.shared.stopTimer()
+                TSScoreKeeper.shared.keepScore()
                 TSScoreKeeper.shared.hideLabel()
                 
                 TSSpeedKeeper.shared.freeze()
                 
                 TSEffectKeeper.shared.pauseAll()
                 TSEffectKeeper.shared.disableLabel()
+            case .none:
+                return
             }
         }
     }
 
-    func scrollBackground(using view: SKView){
+    private func scrollBackground(using view: SKView){
         if let backgroundA = self.backgroundA, let backgroundB = self.backgroundB, let backgroundC = self.backgroundC, let backgroundD = self.backgroundD {
             let tpTop = view.frame.minY + view.frame.height * 2 // Where background will teleport to once offscreen
             let tpBottom = view.frame.minY - view.frame.height // Where background will teleport from once offscreen
@@ -385,7 +409,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
    
-    func runGameLogic(using view: SKView){
+    private func runGameLogic(using view: SKView){
         scrollBackground(using: view)
          
         if let player = self.player {
@@ -490,6 +514,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
    
     override func didMove(to view: SKView) {
+        // Prepare game context
+        prepareGameContext()
+        
         // Configure game components
         setGlobalScale(from: view)
         configurePhysics()
