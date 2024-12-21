@@ -3,7 +3,7 @@ import SpriteKit
 class TSGameScene: SKScene, SKPhysicsContactDelegate {
     //
     
-    weak var context: TSGameContext?
+    unowned let context: TSGameContext
    
     //
 
@@ -63,18 +63,12 @@ class TSGameScene: SKScene, SKPhysicsContactDelegate {
     init(context: TSGameContext, size: CGSize){
         self.context = context
         super.init(size: size)
+        
+        _ = TSAudioKeeper.shared // pre init audio
     }
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-  
-    func prepareGameContext(){
-        guard let context else {
-            return
-        }
-        
-        context.scene = self
     }
     
     //
@@ -514,9 +508,6 @@ class TSGameScene: SKScene, SKPhysicsContactDelegate {
     }
    
     override func didMove(to view: SKView) {
-        // Prepare game context
-        prepareGameContext()
-        
         // Configure game components
         setGlobalScale(from: view)
         configurePhysics()
